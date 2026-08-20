@@ -100,9 +100,39 @@ Audit metadata never includes passwords, hashes, tokens, secrets, or full curren
 
 ### QR & SabPaisa (Phase 4 Placeholder)
 
-- **Generate QR** buttons display a Phase 4 placeholder — no SabPaisa API calls
+- **Generate QR** buttons display a Phase 4 placeholder — no SabPaisa API calls from UI yet
 - Existing seeded QR records are identifiable as development/demo data
 - SabPaisa credentials, encryption, webhooks, and live payment sync: **Phase 4**
+
+## Phase 4 — SabPaisa Integration
+
+### Part 1 — Integration Foundation (current)
+
+Server-only SabPaisa foundation under `src/lib/sabpaisa/`:
+
+- Environment configuration (`SABPAISA_ENV`, `SABPAISA_BASE_URL`, API credentials, encryption keys)
+- Secure credential loading from environment variables only
+- `getSabPaisaHeaders()` — `X-API-Key`, `X-API-Secret`, `Content-Type: application/json`
+- Encrypted request/response envelope types (`{ encrypted: true, data: "..." }`)
+- HTTP client foundation with timeout, error normalization, encrypted response detection
+- Payment rail identifier validation helpers (`hdfc`, `icici`)
+- Foundation tests: `npm run test:sabpaisa-foundation`
+
+**Environment variables (names only — never commit values):**
+
+| Variable | Purpose |
+|----------|---------|
+| `SABPAISA_ENV` | `staging` (default) or `production` |
+| `SABPAISA_BASE_URL` | SabPaisa API base URL (HTTPS) |
+| `SABPAISA_API_KEY` | Server-side API key |
+| `SABPAISA_API_SECRET` | Server-side API secret |
+| `SABPAISA_ENCRYPTION_MASTER_KEY` | 64-char hex (32 bytes) |
+| `SABPAISA_ENCRYPTION_HMAC_SECRET` | 96-char hex (48 bytes) |
+
+**No live SabPaisa QR API call is performed in Phase 4 Part 1.**  
+`POST /api/v2/qr` is not implemented. Encryption encrypt/decrypt interoperability is **blocked** until SabPaisa-provided PBKDF2/HMAC derivation details are available from the official SabQR v2.1 helper.
+
+**Not implemented in Part 1:** QR creation UI activation, live QR creation, webhooks, transactions, settlements, bulk QR.
 
 ## Installation
 
@@ -197,6 +227,7 @@ npm run test:merchant-security    # 13/13 merchant RBAC scenarios
 npm run test:merchant-validation  # Merchant Zod validation
 npm run test:user-security        # 16/16 user/RBAC scenarios
 npm run test:user-validation      # User input validation
+npm run test:sabpaisa-foundation  # SabPaisa Phase 4 Part 1 foundation
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -215,6 +246,7 @@ npm run test:merchant-security
 npm run test:merchant-validation
 npm run test:user-security
 npm run test:user-validation
+npm run test:sabpaisa-foundation
 ```
 
 ## Project Structure
@@ -234,6 +266,7 @@ src/
     services/            # Database access with tenant scoping
     actions/             # Server actions (clients, merchants, users)
     validations/         # Zod schemas
+    sabpaisa/            # SabPaisa server-only integration foundation
     mappers.ts           # Prisma → UI type mappers
   components/            # UI components
 scripts/
@@ -243,6 +276,7 @@ scripts/
   verify-merchant-validation.ts
   verify-user-security.ts
   verify-user-validation.ts
+  verify-sabpaisa-foundation.ts
 ```
 
 ## Remaining Limitations (Post Phase 3)
@@ -252,7 +286,7 @@ scripts/
 - **QR generation** — Phase 4 placeholder; existing QR records are demo/seed data
 - **Reports CSV export** — mock implementation
 - **Settings persistence** — general/notification settings not stored in database
-- **SabPaisa integration** — Phase 4 (authentication, encryption, live QR APIs, webhooks)
+- **SabPaisa QR creation** — Part 1 foundation only; encrypt/decrypt interoperability blocked pending official derivation spec
 - **Transactions** — seeded development data; not live payment sync
 
 ## Future Roadmap
@@ -262,6 +296,6 @@ scripts/
 | **Phase 1** | UI + Frontend Architecture | Complete |
 | **Phase 2** | PostgreSQL + Prisma + Auth + RBAC + Tenant Isolation | Complete |
 | **Phase 3** | Bank/Patsanstha + Merchant Onboarding + User Management | Complete |
-| **Phase 4** | SabPaisa Authentication + Encryption + QR APIs | Not started |
+| **Phase 4** | SabPaisa Authentication + Encryption + QR APIs | Part 1 foundation complete |
 | **Phase 5** | Transactions + Payment Sync + Reports | Not started |
 | **Phase 6** | Testing + Security + UAT + Production Deployment | Not started |
