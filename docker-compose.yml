@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mahacred-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mahacred
+      POSTGRES_PASSWORD: mahacred_dev
+      POSTGRES_DB: mahacred_qr
+    ports:
+      - "5432:5432"
+    volumes:
+      - mahacred_pg_data:/var/lib/postgresql/data
+
+volumes:
+  mahacred_pg_data:

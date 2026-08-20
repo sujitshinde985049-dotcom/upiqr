@@ -1,0 +1,143 @@
+export type ClientType = "bank" | "patsanstha";
+
+export type EntityStatus = "active" | "inactive" | "pending";
+
+export type TransactionStatus = "success" | "pending" | "failed";
+
+export type PaymentRail = "HDFC" | "ICICI";
+
+export type UserRole =
+  | "super_admin"
+  | "client_admin"
+  | "client_operator"
+  | "merchant_user";
+
+export interface Client {
+  id: string;
+  clientCode: string;
+  name: string;
+  type: ClientType;
+  status: EntityStatus;
+  contactPerson: string;
+  mobile: string;
+  email: string;
+  registrationNumber?: string;
+  address?: string;
+  city?: string;
+  district?: string;
+  state?: string;
+  pinCode?: string;
+  createdAt: string;
+}
+
+export interface Merchant {
+  id: string;
+  merchantCode: string;
+  clientId: string;
+  businessName: string;
+  accountHolderName: string;
+  maskedCurrentAccountReference: string;
+  currentAccountReference?: string;
+  merchantCategory?: string;
+  businessType?: string;
+  gstNumber?: string;
+  pan?: string;
+  mobile: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  district?: string;
+  state?: string;
+  pinCode?: string;
+  status: EntityStatus;
+  createdAt: string;
+}
+
+export interface QRCode {
+  id: string;
+  clientId: string;
+  merchantId: string;
+  sabpaisaQrId?: string;
+  qrName: string;
+  qrIdentifier: string;
+  railId: PaymentRail;
+  vpa: string;
+  qrImageUrl?: string;
+  maxAmountPerTransaction?: number;
+  description?: string;
+  category?: string;
+  status: EntityStatus;
+  createdAt: string;
+}
+
+export interface Transaction {
+  id: string;
+  clientId: string;
+  merchantId: string;
+  qrId: string;
+  transactionId: string;
+  amount: number;
+  status: TransactionStatus;
+  customerVpa: string;
+  bankReferenceNumber: string;
+  paymentMethod: string;
+  initiatedAt: string;
+  completedAt?: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  clientId?: string;
+  merchantId?: string;
+  status: EntityStatus;
+  lastLogin?: string;
+  createdAt: string;
+}
+
+export interface ClientWithStats extends Client {
+  totalMerchants: number;
+  activeQr: number;
+  todayCollection: number;
+  totalCollection: number;
+}
+
+export interface MerchantWithStats extends Merchant {
+  clientName: string;
+  qrCount: number;
+  transactionCount: number;
+  todayCollection: number;
+  totalCollection: number;
+}
+
+export interface QRCodeWithStats extends QRCode {
+  merchantName: string;
+  clientName: string;
+  transactionCount: number;
+  collection: number;
+}
+
+export interface TransactionWithRelations extends Transaction {
+  merchantName: string;
+  clientName: string;
+  qrName: string;
+  qrIdentifier: string;
+}
+
+export interface DashboardKPIs {
+  totalClients: number;
+  totalMerchants: number;
+  activeQrCodes: number;
+  todayTransactions: number;
+  todayCollection: number;
+  totalCollection: number;
+}
+
+export interface ChartDataPoint {
+  date: string;
+  label: string;
+  amount: number;
+  count: number;
+}
