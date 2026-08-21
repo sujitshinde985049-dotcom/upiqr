@@ -69,3 +69,24 @@ export {
   validateIciciQrIdentifier,
   validateSabPaisaQrIdentifier,
 } from "./validation";
+export {
+  loadSabPaisaIntegrationMode,
+  assertLiveSabPaisaIntegrationReady,
+  type SabPaisaIntegrationMode,
+} from "./mode";
+export {
+  sabPaisaCreateQrRequestSchema,
+  sabPaisaCreateQrResponseSchema,
+  sabPaisaQrDataSchema,
+  sabPaisaRailIdSchema,
+  MOCK_SABPAISA_ERROR_MAP,
+  type SabPaisaCreateQrRequest,
+  type SabPaisaCreateQrResponse,
+  type SabPaisaQRProvider,
+  type MockSabPaisaErrorSimulation,
+} from "./qr-types";
+export {
+  getSabPaisaQRProvider,
+  LiveSabPaisaQRProvider,
+  MockSabPaisaQRProvider,
+} from "./providers";

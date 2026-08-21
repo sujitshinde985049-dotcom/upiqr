@@ -6,6 +6,8 @@ export type TransactionStatus = "success" | "pending" | "failed";
 
 export type PaymentRail = "HDFC" | "ICICI";
 
+export type QRProviderMode = "mock" | "live" | "legacy";
+
 export type UserRole =
   | "super_admin"
   | "client_admin"
@@ -58,14 +60,20 @@ export interface QRCode {
   clientId: string;
   merchantId: string;
   sabpaisaQrId?: string;
+  provider: string;
+  providerMode: QRProviderMode;
   qrName: string;
   qrIdentifier: string;
   railId: PaymentRail;
   vpa: string;
   qrImageUrl?: string;
+  upiString?: string;
   maxAmountPerTransaction?: number;
   description?: string;
   category?: string;
+  notes?: string;
+  isPayable: boolean;
+  providerCreatedAt?: string;
   status: EntityStatus;
   createdAt: string;
 }

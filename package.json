@@ -18,7 +18,9 @@
     "test:user-security": "tsx scripts/verify-user-security.ts",
     "test:user-validation": "tsx scripts/verify-user-validation.ts",
     "test:phase3-integration": "tsx scripts/verify-phase3-integration.ts",
-    "test:sabpaisa-foundation": "tsx scripts/verify-sabpaisa-foundation.ts"
+    "test:sabpaisa-foundation": "tsx scripts/verify-sabpaisa-foundation.ts",
+    "test:qr-provider-contract": "tsx scripts/verify-qr-provider-contract.ts",
+    "test:qr-mock-security": "tsx scripts/verify-qr-mock-security.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

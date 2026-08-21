@@ -1,101 +1,65 @@
 "use server";
 
-import { EntityStatus, PaymentRail } from "@prisma/client";
-import { prisma } from "@/lib/db/prisma";
 import {
   requireAuthenticatedUser,
   requireClientAccess,
   requireMerchantAccess,
   requireRole,
+  AuthError,
 } from "@/lib/auth/authorization";
 import { createAuditLog } from "@/lib/audit/audit-log";
-import { generateEntityId } from "@/lib/utils/id-generator";
-import { createQRSchema } from "@/lib/validations/entities";
+import { prisma } from "@/lib/db/prisma";
+import { EntityStatus } from "@prisma/client";
+import {
+  createMerchantQR,
+  QRServiceError,
+} from "@/lib/services/qr-service";
 import { actionError, actionSuccess, type ActionResult } from "./types";
 
-export async function createQRCodeAction(
+export async function generateMerchantQRAction(
   input: unknown
 ): Promise<
   ActionResult<{
     id: string;
-    vpa: string;
     qrName: string;
     merchantName: string;
     clientName: string;
+    providerMode: string;
+    isPayable: boolean;
+    vpa: string;
     rail: string;
+    idempotentReplay: boolean;
   }>
 > {
   try {
     const user = await requireAuthenticatedUser();
-    requireRole(user, [
-      "SUPER_ADMIN",
-      "CLIENT_ADMIN",
-      "CLIENT_OPERATOR",
-      "MERCHANT_USER",
-    ]);
-
-    const parsed = createQRSchema.safeParse(input);
-    if (!parsed.success) {
-      return actionError(parsed.error.issues[0]?.message ?? "Invalid input");
-    }
-
-    const data = parsed.data;
-    requireClientAccess(user, data.clientId);
-
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: data.merchantId },
-      include: { client: true },
-    });
-
-    if (!merchant || merchant.clientId !== data.clientId) {
-      return actionError("Merchant does not belong to the selected client");
-    }
-
-    await requireMerchantAccess(user, merchant.id, merchant.clientId);
-
-    const id = generateEntityId("QR");
-    const vpa = `${data.qrIdentifier.toLowerCase().replace(/[^a-z0-9]/g, "")}@mahacred`;
-    const maxAmount = data.maxAmountPerTransaction
-      ? parseFloat(data.maxAmountPerTransaction)
-      : null;
-
-    await prisma.qRCode.create({
-      data: {
-        id,
-        clientId: data.clientId,
-        merchantId: data.merchantId,
-        qrName: data.qrName,
-        qrIdentifier: data.qrIdentifier,
-        railId: data.railId as PaymentRail,
-        vpa,
-        maxAmountPerTransaction: maxAmount,
-        description: data.description || null,
-        category: data.category || null,
-        status: EntityStatus.ACTIVE,
-      },
-    });
-
-    await createAuditLog({
-      userId: user.id,
-      clientId: data.clientId,
-      action: "QR_CREATED",
-      entityType: "QRCode",
-      entityId: id,
-      metadata: { qrName: data.qrName, merchantId: data.merchantId },
-    });
-
-    return actionSuccess({
-      id,
-      vpa,
-      qrName: data.qrName,
-      merchantName: merchant.businessName,
-      clientName: merchant.client.name,
-      rail: data.railId,
-    });
+    const result = await createMerchantQR(user, input);
+    return actionSuccess(result);
   } catch (error) {
-    console.error("createQRCodeAction:", error);
+    if (error instanceof AuthError) {
+      return actionError(
+        error.code === "FORBIDDEN"
+          ? "You are not authorized to create QR codes for this merchant"
+          : "Authentication required"
+      );
+    }
+    if (error instanceof QRServiceError) {
+      return actionError(error.message);
+    }
+    console.error("generateMerchantQRAction failed");
     return actionError("Unable to create QR code. Please try again.");
   }
+}
+
+/** @deprecated Use generateMerchantQRAction — retained for compatibility */
+export async function createQRCodeAction(
+  input: unknown
+): Promise<ActionResult<{ id: string }>> {
+  const result = await generateMerchantQRAction(input);
+  if (!result.success) {
+    return actionError(result.error);
+  }
+  return actionSuccess({ id: result.data.id });
 }
 
 export async function updateQRStatusAction(
@@ -137,7 +101,7 @@ export async function updateQRStatusAction(
 
     return actionSuccess(undefined);
   } catch (error) {
-    console.error("updateQRStatusAction:", error);
+    console.error("updateQRStatusAction failed");
     return actionError("Unable to update QR status.");
   }
 }

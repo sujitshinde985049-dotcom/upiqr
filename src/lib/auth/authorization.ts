@@ -204,6 +204,15 @@ export function canCreateMerchantUser(user: SessionUser): boolean {
   return user.role === "SUPER_ADMIN" || user.role === "CLIENT_ADMIN";
 }
 
+export function canCreateQR(user: SessionUser): boolean {
+  return (
+    user.role === "SUPER_ADMIN" ||
+    user.role === "CLIENT_ADMIN" ||
+    user.role === "CLIENT_OPERATOR" ||
+    user.role === "MERCHANT_USER"
+  );
+}
+
 export function resolveUserClientIdForCreate(
   user: SessionUser,
   submittedClientId?: string | null

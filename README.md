@@ -98,15 +98,16 @@ Audit metadata never includes passwords, hashes, tokens, secrets, or full curren
 - Audit logs store masked account references only
 - Sensitive payment credentials (ATM PIN, UPI PIN, CVV, OTP, net banking passwords) are never collected or stored
 
-### QR & SabPaisa (Phase 4 Placeholder)
+### QR & SabPaisa (Phase 4 Part 2 — Mock QR)
 
-- **Generate QR** buttons display a Phase 4 placeholder — no SabPaisa API calls from UI yet
-- Existing seeded QR records are identifiable as development/demo data
-- SabPaisa credentials, encryption, webhooks, and live payment sync: **Phase 4**
+- **Generate QR** form creates **TEST/MOCK** QR records via `SABPAISA_MODE=mock` — no live SabPaisa API call
+- Mock QRs are clearly marked **TEST** / **NOT PAYABLE** in list and detail views
+- Existing seeded QR records are identifiable as development/demo (`LEGACY` provider mode)
+- Live SabPaisa credentials, encryption interoperability, webhooks, and live payment sync: **future parts**
 
 ## Phase 4 — SabPaisa Integration
 
-### Part 1 — Integration Foundation (current)
+### Part 1 — Integration Foundation (complete)
 
 Server-only SabPaisa foundation under `src/lib/sabpaisa/`:
 
@@ -128,11 +129,54 @@ Server-only SabPaisa foundation under `src/lib/sabpaisa/`:
 | `SABPAISA_API_SECRET` | Server-side API secret |
 | `SABPAISA_ENCRYPTION_MASTER_KEY` | 64-char hex (32 bytes) |
 | `SABPAISA_ENCRYPTION_HMAC_SECRET` | 96-char hex (48 bytes) |
+| `SABPAISA_MODE` | `mock` (default) or `live` — live disabled until onboarding complete |
 
 **No live SabPaisa QR API call is performed in Phase 4 Part 1.**  
 `POST /api/v2/qr` is not implemented. Encryption encrypt/decrypt interoperability is **blocked** until SabPaisa-provided PBKDF2/HMAC derivation details are available from the official SabQR v2.1 helper.
 
-**Not implemented in Part 1:** QR creation UI activation, live QR creation, webhooks, transactions, settlements, bulk QR.
+### Part 2 — SabPaisa Contract Mock QR (current)
+
+Full TEST QR generation workflow using a SabPaisa-compatible **mock adapter**:
+
+```text
+Merchant → Generate QR UI → Server Auth → RBAC → Tenant Check
+         → Request Validation → SabPaisa QR Service → Mock Provider
+         → SabPaisa-compatible response → Neon QR record → QR Detail UI
+```
+
+**Integration mode** (`SABPAISA_MODE`):
+
+| Value | Behavior |
+|-------|----------|
+| `mock` (default) | In-process mock provider; no network request to SabPaisa |
+| `live` | **Disabled** — fails with `LIVE_INTEGRATION_NOT_READY` until credentials and official encryption interoperability are available |
+
+**Never silently falls back from `live` to `mock`.**
+
+**Provider abstraction** (`src/lib/sabpaisa/providers/`):
+
+- `MockSabPaisaQRProvider` — implements SabQR API v2.1 create response contract
+- `LiveSabPaisaQRProvider` — prepared but throws `LIVE_INTEGRATION_NOT_READY`
+- `getSabPaisaQRProvider()` — factory used by `qr-service.ts`
+
+**Mock QR characteristics:**
+
+- Provider IDs use `mock_qr_...` prefix
+- VPA/UPI strings use clearly synthetic test patterns (e.g. `*.mahacred.invalid`, `mahacred-test://qr/not-payable/...`)
+- `isPayable=false` on all mock records
+- `providerMode=MOCK` stored in database for reporting separation
+- QR images use local test placeholder — not a live `upi://pay` destination
+
+**Database:** `QRCode` model extended with `provider`, `providerMode`, `upiString`, `notes`, `isPayable`, `providerCreatedAt`, `idempotencyKey`.
+
+**Tests:**
+
+```bash
+npm run test:qr-provider-contract  # 16/16 — SabPaisa create response + error normalization
+npm run test:qr-mock-security      # 22/22 — RBAC, tenant isolation, validation, idempotency
+```
+
+**Not implemented in Part 2:** live SabPaisa HTTP calls, webhooks, transactions, settlement, reconciliation, bulk QR.
 
 ## Installation
 
@@ -228,6 +272,8 @@ npm run test:merchant-validation  # Merchant Zod validation
 npm run test:user-security        # 16/16 user/RBAC scenarios
 npm run test:user-validation      # User input validation
 npm run test:sabpaisa-foundation  # SabPaisa Phase 4 Part 1 foundation
+npm run test:qr-provider-contract # SabPaisa Phase 4 Part 2 mock contract
+npm run test:qr-mock-security     # SabPaisa Phase 4 Part 2 security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -247,6 +293,8 @@ npm run test:merchant-validation
 npm run test:user-security
 npm run test:user-validation
 npm run test:sabpaisa-foundation
+npm run test:qr-provider-contract
+npm run test:qr-mock-security
 ```
 
 ## Project Structure
@@ -277,16 +325,18 @@ scripts/
   verify-user-security.ts
   verify-user-validation.ts
   verify-sabpaisa-foundation.ts
+  verify-qr-provider-contract.ts
+  verify-qr-mock-security.ts
 ```
 
 ## Remaining Limitations (Post Phase 3)
 
 - **User edit** — create + activate/deactivate only; no name/email/role edit workflow
 - **Password reset** — temporary password at creation only; no self-service reset
-- **QR generation** — Phase 4 placeholder; existing QR records are demo/seed data
+- **QR generation** — Part 2 mock workflow active; mock QRs are NOT payable; live SabPaisa requires onboarding
 - **Reports CSV export** — mock implementation
 - **Settings persistence** — general/notification settings not stored in database
-- **SabPaisa QR creation** — Part 1 foundation only; encrypt/decrypt interoperability blocked pending official derivation spec
+- **SabPaisa live QR** — mock mode only; encrypt/decrypt interoperability blocked pending official derivation spec
 - **Transactions** — seeded development data; not live payment sync
 
 ## Future Roadmap
@@ -296,6 +346,6 @@ scripts/
 | **Phase 1** | UI + Frontend Architecture | Complete |
 | **Phase 2** | PostgreSQL + Prisma + Auth + RBAC + Tenant Isolation | Complete |
 | **Phase 3** | Bank/Patsanstha + Merchant Onboarding + User Management | Complete |
-| **Phase 4** | SabPaisa Authentication + Encryption + QR APIs | Part 1 foundation complete |
+| **Phase 4** | SabPaisa Authentication + Encryption + QR APIs | Part 2 mock QR workflow complete |
 | **Phase 5** | Transactions + Payment Sync + Reports | Not started |
 | **Phase 6** | Testing + Security + UAT + Production Deployment | Not started |

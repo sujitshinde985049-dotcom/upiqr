@@ -7,7 +7,11 @@ export const SABPAISA_ENV_VARS = {
   API_SECRET: "SABPAISA_API_SECRET",
   ENCRYPTION_MASTER_KEY: "SABPAISA_ENCRYPTION_MASTER_KEY",
   ENCRYPTION_HMAC_SECRET: "SABPAISA_ENCRYPTION_HMAC_SECRET",
+  MODE: "SABPAISA_MODE",
 } as const;
+
+export const SABPAISA_MODE_VALUES = ["mock", "live"] as const;
+export const SABPAISA_DEFAULT_MODE = "mock" as const;
 
 export const SABPAISA_ENV_VALUES = ["staging", "production"] as const;
 

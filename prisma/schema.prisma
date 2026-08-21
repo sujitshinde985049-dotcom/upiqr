@@ -29,6 +29,12 @@ enum PaymentRail {
   ICICI
 }
 
+enum QRProviderMode {
+  MOCK
+  LIVE
+  LEGACY
+}
+
 enum TransactionStatus {
   SUCCESS
   PENDING
@@ -121,21 +127,28 @@ model Merchant {
 }
 
 model QRCode {
-  id                      String       @id
+  id                      String          @id
   clientId                String
   merchantId              String
   sabpaisaQrId            String?
+  provider                String          @default("sabpaisa")
+  providerMode            QRProviderMode  @default(LEGACY)
   qrName                  String
   qrIdentifier            String
   railId                  PaymentRail
   vpa                     String?
   qrImageUrl              String?
-  maxAmountPerTransaction Decimal?     @db.Decimal(12, 2)
+  upiString               String?
+  maxAmountPerTransaction Decimal?        @db.Decimal(12, 2)
   description             String?
   category                String?
-  status                  EntityStatus @default(ACTIVE)
-  createdAt               DateTime     @default(now())
-  updatedAt               DateTime     @updatedAt
+  notes                   String?
+  isPayable               Boolean         @default(false)
+  providerCreatedAt       DateTime?
+  idempotencyKey          String?         @unique
+  status                  EntityStatus    @default(ACTIVE)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
 
   client       Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
   merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)

@@ -13,6 +13,7 @@ import { DateDisplay } from "@/components/shared/DateDisplay";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { QRPreview } from "@/components/qr/QRPreview";
+import { ProviderModeBadge } from "@/components/qr/ProviderModeBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils/format-currency";
@@ -76,6 +77,7 @@ export function QRDetailPageContent({
         description={`QR ID: ${qr.id}`}
         actions={
           <div className="flex items-center gap-2">
+            <ProviderModeBadge mode={qr.providerMode} isPayable={qr.isPayable} />
             <StatusBadge status={qr.status} />
             <Button
               variant="outline"
@@ -104,6 +106,13 @@ export function QRDetailPageContent({
         }
       />
 
+      {(qr.providerMode === "mock" || !qr.isPayable) && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-50 p-4 text-sm font-medium text-amber-900">
+          TEST QR — NOT PAYABLE. This QR was generated in SabPaisa contract mock mode and
+          must not be used for live payments.
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardContent className="flex flex-col items-center pt-6">
@@ -112,6 +121,8 @@ export function QRDetailPageContent({
               vpa={qr.vpa}
               merchantName={qr.merchantName}
               size={180}
+              isPayable={qr.isPayable}
+              providerMode={qr.providerMode}
             />
           </CardContent>
         </Card>
@@ -142,8 +153,18 @@ export function QRDetailPageContent({
               </Link>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Payment Rail</p>
-              <p className="text-sm font-medium">{qr.railId}</p>
+              <p className="text-xs text-muted-foreground">Provider Reference</p>
+              <p className="font-mono text-sm font-medium">
+                {qr.sabpaisaQrId ?? "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Integration Mode</p>
+              <p className="text-sm font-medium uppercase">{qr.providerMode}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Payable</p>
+              <p className="text-sm font-medium">{qr.isPayable ? "Yes" : "No"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Created Date</p>
@@ -155,10 +176,32 @@ export function QRDetailPageContent({
                 <CurrencyDisplay amount={qr.maxAmountPerTransaction} />
               </div>
             )}
+            <div>
+              <p className="text-xs text-muted-foreground">Payment Rail</p>
+              <p className="text-sm font-medium">{qr.railId}</p>
+            </div>
+            {qr.upiString && (
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted-foreground">Test UPI Representation</p>
+                <p className="break-all font-mono text-xs font-medium">{qr.upiString}</p>
+              </div>
+            )}
             {qr.description && (
               <div className="sm:col-span-2">
                 <p className="text-xs text-muted-foreground">Description</p>
                 <p className="text-sm font-medium">{qr.description}</p>
+              </div>
+            )}
+            {qr.category && (
+              <div>
+                <p className="text-xs text-muted-foreground">Category</p>
+                <p className="text-sm font-medium">{qr.category}</p>
+              </div>
+            )}
+            {qr.notes && (
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted-foreground">Notes</p>
+                <p className="text-sm font-medium">{qr.notes}</p>
               </div>
             )}
           </CardContent>

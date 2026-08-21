@@ -14,6 +14,7 @@ import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { GenerateQRDialog } from "@/components/qr/GenerateQRDialog";
+import { ProviderModeBadge } from "@/components/qr/ProviderModeBadge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -88,9 +89,11 @@ export function QRCodesPageContent({
     },
     { key: "rail", header: "Rail", cell: (qr) => qr.railId },
     {
-      key: "vpa",
-      header: "VPA",
-      cell: (qr) => <span className="font-mono text-xs">{qr.vpa}</span>,
+      key: "mode",
+      header: "Mode",
+      cell: (qr) => (
+        <ProviderModeBadge mode={qr.providerMode} isPayable={qr.isPayable} />
+      ),
     },
     { key: "txns", header: "Transactions", cell: (qr) => qr.transactionCount },
     {
@@ -162,9 +165,9 @@ export function QRCodesPageContent({
         }
       />
 
-      <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-        SabPaisa QR generation will be enabled in Phase 4. Existing QR records
-        are development/demo data and are not linked to live payment processing.
+      <div className="rounded-lg border border-amber-500/30 bg-amber-50/50 p-4 text-sm text-amber-900">
+        SabPaisa contract mock mode is active. New QR records are TEST only and are
+        not payable. No live SabPaisa network request is made.
       </div>
 
       <FilterBar>
@@ -201,7 +204,6 @@ export function QRCodesPageContent({
       <GenerateQRDialog
         open={generateOpen}
         onOpenChange={setGenerateOpen}
-        clients={clients}
         merchants={merchants}
       />
 

@@ -271,8 +271,8 @@ export function MerchantDetailPageContent({
 
         <TabsContent value="qr" className="mt-4">
           <div className="mb-4 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            SabPaisa QR generation will be enabled in Phase 4. Existing QR records
-            are development/demo data.
+            SabPaisa contract mock mode: generate TEST QR codes (NOT PAYABLE). No live
+            SabPaisa API call is made.
           </div>
           <DataTable columns={qrColumns} data={qrs} emptyTitle="No QR codes" />
         </TabsContent>
@@ -358,10 +358,9 @@ export function MerchantDetailPageContent({
       <GenerateQRDialog
         open={qrOpen}
         onOpenChange={setQrOpen}
-        clients={clients}
-        merchants={merchants}
-        defaultClientId={merchant.clientId}
+        merchants={[merchant]}
         defaultMerchantId={merchant.id}
+        lockMerchant
       />
 
       {canManageStatus && (

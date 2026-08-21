@@ -1,8 +1,20 @@
 import type { QRCode } from "@/types";
 
+function legacyQr(
+  data: Omit<QRCode, "provider" | "providerMode" | "isPayable"> &
+    Partial<Pick<QRCode, "provider" | "providerMode" | "isPayable">>
+): QRCode {
+  return {
+    provider: "sabpaisa",
+    providerMode: "legacy",
+    isPayable: false,
+    ...data,
+  };
+}
+
 export const mockQRCodes: QRCode[] = [
   // Sai Traders (MCH001, CLT001)
-  {
+  legacyQr({
     id: "QR001",
     clientId: "CLT001",
     merchantId: "MCH001",
@@ -17,8 +29,8 @@ export const mockQRCodes: QRCode[] = [
     category: "Retail",
     status: "active",
     createdAt: "2023-04-15T10:00:00Z",
-  },
-  {
+  }),
+  legacyQr({
     id: "QR002",
     clientId: "CLT001",
     merchantId: "MCH001",
@@ -32,9 +44,9 @@ export const mockQRCodes: QRCode[] = [
     category: "Retail",
     status: "active",
     createdAt: "2023-05-01T10:00:00Z",
-  },
+  }),
   // Om Medical (MCH002, CLT001)
-  {
+  legacyQr({
     id: "QR003",
     clientId: "CLT001",
     merchantId: "MCH002",
@@ -49,9 +61,9 @@ export const mockQRCodes: QRCode[] = [
     category: "Healthcare",
     status: "active",
     createdAt: "2023-05-20T10:00:00Z",
-  },
+  }),
   // Shree Electronics (MCH003, CLT001)
-  {
+  legacyQr({
     id: "QR004",
     clientId: "CLT001",
     merchantId: "MCH003",
@@ -66,9 +78,9 @@ export const mockQRCodes: QRCode[] = [
     category: "Electronics",
     status: "active",
     createdAt: "2023-06-25T10:00:00Z",
-  },
+  }),
   // Ganesh Hardware (MCH004, CLT002)
-  {
+  legacyQr({
     id: "QR005",
     clientId: "CLT002",
     merchantId: "MCH004",
@@ -82,9 +94,9 @@ export const mockQRCodes: QRCode[] = [
     category: "Hardware",
     status: "active",
     createdAt: "2023-07-05T10:00:00Z",
-  },
+  }),
   // Krishna Enterprises (MCH005, CLT002)
-  {
+  legacyQr({
     id: "QR006",
     clientId: "CLT002",
     merchantId: "MCH005",
@@ -99,8 +111,8 @@ export const mockQRCodes: QRCode[] = [
     category: "Wholesale",
     status: "active",
     createdAt: "2023-08-15T10:00:00Z",
-  },
-  {
+  }),
+  legacyQr({
     id: "QR007",
     clientId: "CLT002",
     merchantId: "MCH005",
@@ -114,9 +126,9 @@ export const mockQRCodes: QRCode[] = [
     category: "Wholesale",
     status: "inactive",
     createdAt: "2023-09-01T10:00:00Z",
-  },
+  }),
   // Maharashtra Kirana (MCH006, CLT003)
-  {
+  legacyQr({
     id: "QR008",
     clientId: "CLT003",
     merchantId: "MCH006",
@@ -130,9 +142,9 @@ export const mockQRCodes: QRCode[] = [
     category: "Grocery",
     status: "active",
     createdAt: "2024-07-05T10:00:00Z",
-  },
+  }),
   // Orange City Restaurant (MCH007, CLT003)
-  {
+  legacyQr({
     id: "QR009",
     clientId: "CLT003",
     merchantId: "MCH007",
@@ -147,9 +159,9 @@ export const mockQRCodes: QRCode[] = [
     category: "Food & Beverage",
     status: "active",
     createdAt: "2024-08-20T10:00:00Z",
-  },
+  }),
   // Aurangabad Textiles (MCH008, CLT005)
-  {
+  legacyQr({
     id: "QR010",
     clientId: "CLT005",
     merchantId: "MCH008",
@@ -163,5 +175,5 @@ export const mockQRCodes: QRCode[] = [
     category: "Textiles",
     status: "inactive",
     createdAt: "2022-09-10T10:00:00Z",
-  },
+  }),
 ];

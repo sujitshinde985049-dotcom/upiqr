@@ -327,14 +327,8 @@ export function MerchantsPageContent({
       <GenerateQRDialog
         open={qrOpen}
         onOpenChange={setQrOpen}
-        clients={clients}
         merchants={result.items}
         defaultMerchantId={qrMerchantId}
-        defaultClientId={
-          qrMerchantId
-            ? result.items.find((m) => m.id === qrMerchantId)?.clientId
-            : undefined
-        }
       />
 
       <ConfirmDialog

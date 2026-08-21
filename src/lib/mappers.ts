@@ -141,17 +141,27 @@ type DbQRCode = {
   clientId: string;
   merchantId: string;
   sabpaisaQrId: string | null;
+  provider: string;
+  providerMode: "MOCK" | "LIVE" | "LEGACY";
   qrName: string;
   qrIdentifier: string;
   railId: PaymentRail;
   vpa: string | null;
   qrImageUrl: string | null;
+  upiString: string | null;
   maxAmountPerTransaction: { toString(): string } | null;
   description: string | null;
   category: string | null;
+  notes: string | null;
+  isPayable: boolean;
+  providerCreatedAt: Date | null;
   status: EntityStatus;
   createdAt: Date;
 };
+
+function toUiProviderMode(mode: DbQRCode["providerMode"]): QRCode["providerMode"] {
+  return mode.toLowerCase() as QRCode["providerMode"];
+}
 
 export function mapQRCode(qr: DbQRCode): QRCode {
   return {
@@ -159,16 +169,22 @@ export function mapQRCode(qr: DbQRCode): QRCode {
     clientId: qr.clientId,
     merchantId: qr.merchantId,
     sabpaisaQrId: qr.sabpaisaQrId ?? undefined,
+    provider: qr.provider,
+    providerMode: toUiProviderMode(qr.providerMode),
     qrName: qr.qrName,
     qrIdentifier: qr.qrIdentifier,
     railId: toUiPaymentRail(qr.railId),
     vpa: qr.vpa ?? "",
     qrImageUrl: qr.qrImageUrl ?? undefined,
+    upiString: qr.upiString ?? undefined,
     maxAmountPerTransaction: qr.maxAmountPerTransaction
       ? decimalToNumber(qr.maxAmountPerTransaction)
       : undefined,
     description: qr.description ?? undefined,
     category: qr.category ?? undefined,
+    notes: qr.notes ?? undefined,
+    isPayable: qr.isPayable,
+    providerCreatedAt: qr.providerCreatedAt?.toISOString(),
     status: toUiEntityStatus(qr.status),
     createdAt: qr.createdAt.toISOString(),
   };
