@@ -98,14 +98,30 @@ Audit metadata never includes passwords, hashes, tokens, secrets, or full curren
 - Audit logs store masked account references only
 - Sensitive payment credentials (ATM PIN, UPI PIN, CVV, OTP, net banking passwords) are never collected or stored
 
-### QR & SabPaisa (Phase 4 Part 2 — Mock QR)
+### QR & SabPaisa (Phase 4 — TEST/MOCK Complete)
 
-- **Generate QR** form creates **TEST/MOCK** QR records via `SABPAISA_MODE=mock` — no live SabPaisa API call
-- Mock QRs are clearly marked **TEST** / **NOT PAYABLE** in list and detail views
-- Existing seeded QR records are identifiable as development/demo (`LEGACY` provider mode)
-- Live SabPaisa credentials, encryption interoperability, webhooks, and live payment sync: **future parts**
+- Full mock SabPaisa QR workflow: create, list, detail, update, deactivate, reactivate, PNG/SVG download
+- **Generate QR** creates **TEST/MOCK** records via `SABPAISA_MODE=mock` — no live SabPaisa API call
+- Mock QRs are **TEST / NOT PAYABLE** in UI, database (`providerMode=MOCK`), and downloads
+- Live SabPaisa integration is **NOT enabled** — see `docs/SABPAISA_LIVE_READINESS.md`
 
-## Phase 4 — SabPaisa Integration
+## Phase 4 — SabPaisa TEST/MOCK Integration (COMPLETE)
+
+**SabPaisa production/live integration is NOT enabled.**  
+Live activation requires SabPaisa onboarding credentials and official encryption interoperability.
+
+```text
+Application/UI → qr-service.ts → SabPaisaQRProvider
+                                    ├── MockSabPaisaQRProvider (active)
+                                    └── LiveSabPaisaQRProvider (disabled, fail-closed)
+```
+
+| Part | Scope | Status |
+|------|-------|--------|
+| Part 1 | Foundation (config, auth, encryption layout, HTTP client, errors) | Complete |
+| Part 2 | Mock QR create (SabQR v2.1 contract) | Complete |
+| Part 3 | Mock QR management (list/detail/update/deactivate/reactivate/download) | Complete |
+| Final | E2E mock workflow, live-readiness verification, documentation | Complete |
 
 ### Part 1 — Integration Foundation (complete)
 
@@ -178,7 +194,7 @@ npm run test:qr-mock-security      # RBAC, tenant isolation, validation, idempot
 
 **Not implemented in Part 2:** live SabPaisa HTTP calls, webhooks, transactions, settlement, reconciliation, bulk QR.
 
-### Part 3 — Mock QR Management (current)
+### Part 3 — Mock QR Management (complete)
 
 SabQR API v2.1 management operations in **mock mode** — no live SabPaisa HTTP requests:
 
@@ -207,6 +223,27 @@ npm run test:qr-management  # List, update, deactivate, reactivate, download, RB
 ```
 
 **Not implemented in Part 3:** regenerate, QR transactions API, QR analytics, webhooks, settlement, live SabPaisa calls.
+
+### Phase 4 Final Verification
+
+**Live mode fail-closed:** `SABPAISA_MODE=live` throws `LIVE_INTEGRATION_NOT_READY` — no silent mock fallback, no unencrypted requests, no live HTTP during fail-closed checks.
+
+**Crypto interoperability:** encrypt/decrypt/tamper tests remain **BLOCKED** (3) until official SabPaisa helper/spec.
+
+**Live readiness checklist:** `docs/SABPAISA_LIVE_READINESS.md`
+
+**Phase 4 test suite:**
+
+```bash
+npm run test:phase4-e2e-mock     # End-to-end mock workflow (Client → Merchant → QR lifecycle)
+npm run test:phase4-final        # Live-readiness, secrets, isolation, DB integrity
+npm run test:qr-management       # QR management RBAC + operations
+npm run test:qr-mock-security    # QR create security
+npm run test:qr-provider-contract # SabQR v2.1 contract shape
+npm run test:sabpaisa-foundation # Foundation (17 PASS + 3 BLOCKED crypto)
+```
+
+**Production policy note:** Deactivating a Client or Merchant does not hard-delete existing QR/transaction history records. New QR creation requires active Client and Merchant.
 
 ## Installation
 
@@ -305,6 +342,8 @@ npm run test:sabpaisa-foundation  # SabPaisa Phase 4 Part 1 foundation
 npm run test:qr-provider-contract # SabPaisa Phase 4 Part 2 mock contract
 npm run test:qr-mock-security     # SabPaisa Phase 4 Part 2 security
 npm run test:qr-management        # SabPaisa Phase 4 Part 3 management
+npm run test:phase4-e2e-mock      # Phase 4 end-to-end mock workflow
+npm run test:phase4-final         # Phase 4 live-readiness + final verification
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -327,6 +366,8 @@ npm run test:sabpaisa-foundation
 npm run test:qr-provider-contract
 npm run test:qr-mock-security
 npm run test:qr-management
+npm run test:phase4-e2e-mock
+npm run test:phase4-final
 ```
 
 ## Project Structure
@@ -360,6 +401,10 @@ scripts/
   verify-qr-provider-contract.ts
   verify-qr-mock-security.ts
   verify-qr-management.ts
+  verify-phase4-e2e-mock.ts
+  verify-phase4-final.ts
+docs/
+  SABPAISA_LIVE_READINESS.md
 ```
 
 ## Remaining Limitations (Post Phase 3)
@@ -369,7 +414,7 @@ scripts/
 - **QR generation** — Part 2 mock workflow active; mock QRs are NOT payable; live SabPaisa requires onboarding
 - **Reports CSV export** — mock implementation
 - **Settings persistence** — general/notification settings not stored in database
-- **SabPaisa live QR** — mock mode only; encrypt/decrypt interoperability blocked pending official derivation spec
+- **SabPaisa live QR** — mock mode only; see `docs/SABPAISA_LIVE_READINESS.md`; crypto interop BLOCKED
 - **Transactions** — seeded development data; not live payment sync
 
 ## Future Roadmap
@@ -379,6 +424,6 @@ scripts/
 | **Phase 1** | UI + Frontend Architecture | Complete |
 | **Phase 2** | PostgreSQL + Prisma + Auth + RBAC + Tenant Isolation | Complete |
 | **Phase 3** | Bank/Patsanstha + Merchant Onboarding + User Management | Complete |
-| **Phase 4** | SabPaisa Authentication + Encryption + QR APIs | Part 3 mock QR management complete |
+| **Phase 4** | SabPaisa TEST/MOCK integration + live-readiness | Complete |
 | **Phase 5** | Transactions + Payment Sync + Reports | Not started |
 | **Phase 6** | Testing + Security + UAT + Production Deployment | Not started |

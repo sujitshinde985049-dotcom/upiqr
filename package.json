@@ -21,7 +21,9 @@
     "test:sabpaisa-foundation": "tsx scripts/verify-sabpaisa-foundation.ts",
     "test:qr-provider-contract": "tsx scripts/verify-qr-provider-contract.ts",
     "test:qr-mock-security": "tsx scripts/verify-qr-mock-security.ts",
-    "test:qr-management": "tsx scripts/verify-qr-management.ts"
+    "test:qr-management": "tsx scripts/verify-qr-management.ts",
+    "test:phase4-e2e-mock": "tsx scripts/verify-phase4-e2e-mock.ts",
+    "test:phase4-final": "tsx scripts/verify-phase4-final.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
