@@ -299,7 +299,56 @@ npm run test:transaction-provider-contract  # SabPaisa transaction contract shap
 npm run test:phase5-part1                   # Transaction foundation + security (35/35)
 ```
 
-**Not implemented in Part 1:** webhook receiver, live transaction API, settlement, reconciliation, refunds, reports/export, analytics.
+**Not implemented in Part 1:** live transaction API reads over HTTP, settlement, reconciliation, refunds, reports/export, analytics.
+
+## Phase 5 Part 2 — Payment Event/Webhook Foundation (COMPLETE)
+
+**Real SabPaisa payment webhook endpoint is NOT enabled.**  
+SabQR API Documentation v2.1 documents transaction **read** APIs only — not a complete payment webhook contract.
+
+```text
+MOCK Payment Event (test/dev only)
+        ↓
+Mock adapter → Normalized Payment Event
+        ↓
+Transaction Event Processor (idempotency + state machine)
+        ↓
+Neon Transaction + PaymentEvent record
+        ↓
+Safe audit metadata
+
+Future:
+SabPaisa (official webhook spec) → SabPaisaWebhookAdapter (currently fail-closed)
+        ↓
+SAME Transaction Event Processor
+```
+
+### Implemented in Part 2
+
+- Provider-neutral normalized payment event model (`src/lib/payment-events/`)
+- `PaymentEvent` processing/idempotency table with uniqueness on `(provider, providerMode, providerEventId)`
+- Internal transaction state machine (`pending`/`success`/`failed` with terminal success/failed)
+- MOCK event ingress via `src/lib/test-fixtures/mock-payment-event-fixture.ts` only
+- QR ownership resolved from database — never from external event tenant fields
+- Amount mismatch / QR mismatch / invalid transition rejection
+- Audit actions: `PAYMENT_EVENT_PROCESSED`, `PAYMENT_EVENT_REJECTED` (no customer VPA in metadata)
+
+### BLOCKED until official SabPaisa webhook specification
+
+- Real webhook payload contract
+- Signature verification
+- Provider replay-window verification
+- Public `/api/webhooks/sabpaisa` production endpoint
+
+`SabPaisaWebhookAdapter` fails closed with `SABPAISA_WEBHOOK_SPEC_NOT_AVAILABLE`.
+
+### Phase 5 Part 2 test suite
+
+```bash
+npm run test:phase5-part2   # Payment event security + idempotency
+```
+
+**Not implemented in Part 2:** live webhook endpoint, settlement, reconciliation, refunds, reports, analytics, Phase 5 Part 3.
 
 ## Installation
 
@@ -402,6 +451,7 @@ npm run test:phase4-e2e-mock      # Phase 4 end-to-end mock workflow
 npm run test:phase4-final         # Phase 4 live-readiness + final verification
 npm run test:transaction-provider-contract # Phase 5 Part 1 SabPaisa transaction contract
 npm run test:phase5-part1         # Phase 5 Part 1 transaction foundation + security
+npm run test:phase5-part2         # Phase 5 Part 2 payment event security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -463,6 +513,7 @@ scripts/
   verify-phase4-final.ts
   verify-transaction-provider-contract.ts
   verify-phase5-part1.ts
+  verify-phase5-part2.ts
 docs/
   SABPAISA_LIVE_READINESS.md
 ```
@@ -476,7 +527,7 @@ docs/
 - **Settings persistence** — general/notification settings not stored in database
 - **SabPaisa live QR** — mock mode only; see `docs/SABPAISA_LIVE_READINESS.md`; crypto interop BLOCKED
 - **Transactions** — Phase 5 Part 1 mock foundation; seeded LEGACY data preserved; not live payment sync
-- **Webhook / settlement / reconciliation** — not implemented
+- **Webhook / settlement / reconciliation** — internal MOCK event processor only; real SabPaisa webhook BLOCKED
 
 ## Future Roadmap
 
@@ -487,5 +538,6 @@ docs/
 | **Phase 3** | Bank/Patsanstha + Merchant Onboarding + User Management | Complete |
 | **Phase 4** | SabPaisa TEST/MOCK integration + live-readiness | Complete |
 | **Phase 5 Part 1** | Transaction foundation (mock provider, RBAC, contracts) | Complete |
-| **Phase 5 Part 2+** | Webhooks, live sync, settlement, reports | Not started |
+| **Phase 5 Part 2** | Secure payment event processor + MOCK event ingress | Complete |
+| **Phase 5 Part 3+** | Live webhook, settlement, reconciliation, reports | Not started |
 | **Phase 6** | Testing + Security + UAT + Production Deployment | Not started |

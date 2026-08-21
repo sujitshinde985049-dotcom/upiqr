@@ -41,6 +41,14 @@ enum TransactionStatus {
   FAILED
 }
 
+enum PaymentEventProcessingStatus {
+  RECEIVED
+  PROCESSED
+  DUPLICATE
+  REJECTED
+  FAILED
+}
+
 model User {
   id           String       @id
   name         String
@@ -186,6 +194,7 @@ model Transaction {
   client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   qrCode   QRCode   @relation(fields: [qrId], references: [id], onDelete: Cascade)
+  paymentEvents PaymentEvent[]
 
   @@unique([provider, providerMode, providerTransactionId])
   @@index([clientId])
@@ -196,6 +205,33 @@ model Transaction {
   @@index([clientId, status])
   @@index([merchantId, status])
   @@index([providerMode])
+}
+
+model PaymentEvent {
+  id                    String                       @id
+  provider              String                       @default("sabpaisa")
+  providerMode          QRProviderMode
+  providerEventId       String
+  providerTransactionId String?
+  eventType             String?
+  processingStatus      PaymentEventProcessingStatus @default(RECEIVED)
+  transactionId         String?
+  qrId                  String?
+  clientId              String?
+  merchantId            String?
+  failureReasonCode     String?
+  receivedAt            DateTime
+  processedAt           DateTime?
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, providerMode, providerEventId])
+  @@index([providerTransactionId])
+  @@index([transactionId])
+  @@index([processingStatus])
+  @@index([receivedAt])
 }
 
 model AuditLog {

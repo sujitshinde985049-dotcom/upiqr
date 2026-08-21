@@ -91,11 +91,31 @@ Application layers that should **not** need rewrites for live:
 
 ---
 
+## Required from SabPaisa before real webhook activation
+
+Official payment webhook/callback documentation is **NOT** included in SabQR API Documentation v2.1 (which covers transaction read APIs only). Before enabling any live webhook endpoint, obtain:
+
+| Item | Purpose |
+|------|---------|
+| Official payment webhook/callback documentation | Exact callback URL expectations and payload schema |
+| Event identifiers | Stable event ID / delivery semantics |
+| Signature/authentication header names | Verified request authenticity |
+| Signing algorithm and secret/key handling | No guessed HMAC/header schemes |
+| Timestamp/replay specification | Provider-level replay protection |
+| Retry policy | Safe idempotent re-delivery behavior |
+| Acknowledgement requirements | Expected HTTP response semantics |
+| Test/UAT webhook facility | Staging verification before production |
+
+MahaCred status: **BLOCKED — official SabPaisa webhook specification required**
+
+---
+
 ## Not in scope for live QR activation
 
-- Transaction API integration (`GET /api/v2/qr/:qr_id/transactions`)
+- Transaction API live reads (`GET /api/v2/transactions`, `GET /api/v2/qr/:qr_id/transactions`) — mock/local only in Phase 5 Part 1
+- Live payment webhook adapter — **BLOCKED** (see webhook checklist above; internal MOCK processor exists in Phase 5 Part 2)
 - QR analytics API
-- Webhooks / settlement / reconciliation
+- Webhooks / settlement / reconciliation (real SabPaisa webhook still BLOCKED)
 - Bulk QR
 - QR regenerate (`POST /api/v2/qr/:qr_id/regenerate` — documented as not yet implemented by SabPaisa)
 
