@@ -16,8 +16,9 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay";
-import { DateDisplay } from "@/components/shared/DateDisplay";
+import {
+  buildClientScopedTransactionColumns,
+} from "@/components/transactions/transaction-scoped-columns";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { EditClientDialog } from "@/components/clients/EditClientDialog";
@@ -137,29 +138,7 @@ export function ClientDetailPageContent({
     },
   ];
 
-  const txnColumns: Column<TransactionWithRelations>[] = [
-    {
-      key: "id",
-      header: "Transaction ID",
-      cell: (t) => <span className="font-mono text-xs">{t.transactionId}</span>,
-    },
-    { key: "merchant", header: "Merchant", cell: (t) => t.merchantName },
-    {
-      key: "amount",
-      header: "Amount",
-      cell: (t) => <CurrencyDisplay amount={t.amount} />,
-    },
-    {
-      key: "status",
-      header: "Status",
-      cell: (t) => <StatusBadge status={t.status} />,
-    },
-    {
-      key: "date",
-      header: "Date",
-      cell: (t) => <DateDisplay date={t.initiatedAt} relative />,
-    },
-  ];
+  const txnColumns = buildClientScopedTransactionColumns();
 
   return (
     <div className="space-y-6">

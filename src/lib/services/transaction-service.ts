@@ -23,6 +23,7 @@ import type {
   SabPaisaTransactionProviderRecord,
 } from "@/lib/sabpaisa/transaction-types";
 import { maskCustomerVpa } from "@/lib/utils/mask-vpa";
+import { getTransactionReconciliationStatus } from "@/lib/transactions/reconciliation";
 import {
   qrTransactionListQuerySchema,
   transactionListQuerySchema,
@@ -103,9 +104,13 @@ function mapToTransactionWithRelations(
       ? maskCustomerVpa(txn.customerVpa)
       : mapped.customerVpa,
     merchantName: txn.merchant.businessName,
+    merchantCode: txn.merchant.merchantCode,
     clientName: txn.client.name,
+    clientCode: txn.client.clientCode,
     qrName: txn.qrCode.qrName,
     qrIdentifier: txn.qrCode.qrIdentifier,
+    createdAt: txn.createdAt.toISOString(),
+    reconciliationStatus: getTransactionReconciliationStatus(mapped.providerMode),
   };
 }
 

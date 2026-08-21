@@ -10,10 +10,11 @@ import { StatCard } from "@/components/shared/StatCard";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay";
 import { DateDisplay } from "@/components/shared/DateDisplay";
-import { DataTable, type Column } from "@/components/shared/DataTable";
+import { DataTable } from "@/components/shared/DataTable";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { QRPreview } from "@/components/qr/QRPreview";
 import { ProviderModeBadge } from "@/components/qr/ProviderModeBadge";
+import { buildQrScopedTransactionColumns } from "@/components/transactions/transaction-scoped-columns";
 import { EditQRDialog } from "@/components/qr/EditQRDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,65 +49,7 @@ export function QRDetailPageContent({
   const [reactivateOpen, setReactivateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
-  const txnColumns: Column<TransactionWithRelations>[] = [
-    {
-      key: "id",
-      header: "Transaction ID",
-      cell: (t) => (
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-xs">{t.transactionId}</span>
-          {(t.providerMode === "mock" || t.providerMode === "legacy") && (
-            <ProviderModeBadge mode={t.providerMode} isPayable={false} />
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "amount",
-      header: "Amount",
-      cell: (t) => <CurrencyDisplay amount={t.amount} />,
-    },
-    {
-      key: "status",
-      header: "Status",
-      cell: (t) => <StatusBadge status={t.status} />,
-    },
-    {
-      key: "paymentMethod",
-      header: "Payment Method",
-      cell: (t) => t.paymentMethod || "—",
-    },
-    {
-      key: "customerName",
-      header: "Customer Name",
-      cell: (t) => t.customerName || "—",
-    },
-    {
-      key: "vpa",
-      header: "Customer VPA",
-      cell: (t) => (
-        <span className="font-mono text-xs">{t.customerVpa || "—"}</span>
-      ),
-    },
-    {
-      key: "bankReference",
-      header: "Bank Reference",
-      cell: (t) => (
-        <span className="font-mono text-xs">{t.bankReferenceNumber || "—"}</span>
-      ),
-    },
-    {
-      key: "initiatedAt",
-      header: "Initiated At",
-      cell: (t) => <DateDisplay date={t.initiatedAt} />,
-    },
-    {
-      key: "completedAt",
-      header: "Completed At",
-      cell: (t) =>
-        t.completedAt ? <DateDisplay date={t.completedAt} /> : "—",
-    },
-  ];
+  const txnColumns = buildQrScopedTransactionColumns();
 
   return (
     <div className="space-y-6">

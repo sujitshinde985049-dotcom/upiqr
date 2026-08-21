@@ -11,8 +11,8 @@ import {
   getClientStatsForUser,
   getMerchantsByClientIdForUser,
   getQRCodesByClientIdForUser,
-  getTransactionsWithRelations,
 } from "@/lib/services/data-service";
+import { listManagedTransactionsForScope } from "@/lib/services/transaction-management-service";
 import { getUsersByClientIdForUser } from "@/lib/services/user-service";
 import { ClientDetailPageContent } from "./client-detail-content";
 
@@ -25,7 +25,7 @@ async function loadClientDetail(id: string, user: SessionUser) {
       getClientStatsForUser(id, user),
       getMerchantsByClientIdForUser(id, user),
       getQRCodesByClientIdForUser(id, user),
-      getTransactionsWithRelations(user, { clientId: id }),
+      listManagedTransactionsForScope(user, { clientId: id, limit: 100 }),
       getUsersByClientIdForUser(id, user),
     ]);
 

@@ -12,8 +12,8 @@ import {
   getMerchantStatsForUser,
   getMerchantsWithStats,
   getQRCodesByMerchantIdForUser,
-  getTransactionsWithRelations,
 } from "@/lib/services/data-service";
+import { listManagedTransactionsForScope } from "@/lib/services/transaction-management-service";
 import { getMerchantAuditLogs } from "@/lib/services/merchant-service";
 import { getUsersByMerchantIdForUser } from "@/lib/services/user-service";
 import type { SessionUser } from "@/lib/auth/types";
@@ -28,7 +28,7 @@ async function loadMerchantDetail(id: string, user: SessionUser) {
       await Promise.all([
         getMerchantStatsForUser(id, user),
         getQRCodesByMerchantIdForUser(id, user),
-        getTransactionsWithRelations(user, { merchantId: id }),
+        listManagedTransactionsForScope(user, { merchantId: id, limit: 100 }),
         getClientsForSelectors(user),
         getMerchantsWithStats(user),
         getMerchantAuditLogs(id),

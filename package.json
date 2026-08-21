@@ -26,7 +26,8 @@
     "test:phase4-final": "tsx scripts/verify-phase4-final.ts",
     "test:transaction-provider-contract": "tsx scripts/verify-transaction-provider-contract.ts",
     "test:phase5-part1": "tsx scripts/verify-phase5-part1.ts",
-    "test:phase5-part2": "tsx scripts/verify-phase5-part2.ts"
+    "test:phase5-part2": "tsx scripts/verify-phase5-part2.ts",
+    "test:phase5-part3": "tsx scripts/verify-phase5-part3.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

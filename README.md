@@ -350,7 +350,35 @@ npm run test:phase5-part2   # Payment event security + idempotency
 
 **Not implemented in Part 2:** live webhook endpoint, settlement, reconciliation, refunds, reports, analytics, Phase 5 Part 3.
 
-## Installation
+## Phase 5 Part 3 — Transaction Management (COMPLETE)
+
+Neon-backed transaction list and detail pages with tenant-safe RBAC, server-side filters, summary metrics, and CSV export.
+
+### Features
+
+- **`/transactions`** — server-side search, filter, sort, and pagination (max page size 100)
+- **`/transactions/[id]`** — read-only transaction detail with masked Customer VPA
+- **Summary metrics** — total/success/pending/failed counts and successful amount (Decimal aggregation)
+- **MOCK / LEGACY / LIVE separation** — provider mode badges, separate successful-amount buckets; MOCK/LEGACY excluded from LIVE financial reporting
+- **Client / Merchant / QR detail** — scoped transaction tabs reuse shared transaction components
+- **CSV export** — `/api/transactions/export` with same tenant authorization and filters (max 10,000 rows, no VPA, formula-injection protection)
+- **Reconciliation foundation** — computed internal status (`NOT_APPLICABLE` for MOCK/LEGACY, `UNVERIFIED` for LIVE); no live SabPaisa reconciliation
+
+### Important terminology
+
+- **Payment success does not imply settlement.**
+- **MOCK/LEGACY data is excluded from LIVE financial reporting.**
+- Payment status, event processing status, and reconciliation status are separate concepts.
+- Transactions are immutable from the UI — no manual status edits or “Mark as Success”.
+
+### Phase 5 Part 3 test suite
+
+```bash
+npm run test:phase5-part3   # Transaction management security + filters + CSV
+```
+
+**Not implemented in Part 3:** live SabPaisa reconciliation, settlement, refunds, live webhook, Phase 5 Part 4.
+
 
 ```bash
 npm install
@@ -452,6 +480,7 @@ npm run test:phase4-final         # Phase 4 live-readiness + final verification
 npm run test:transaction-provider-contract # Phase 5 Part 1 SabPaisa transaction contract
 npm run test:phase5-part1         # Phase 5 Part 1 transaction foundation + security
 npm run test:phase5-part2         # Phase 5 Part 2 payment event security
+npm run test:phase5-part3         # Phase 5 Part 3 transaction management
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -539,5 +568,6 @@ docs/
 | **Phase 4** | SabPaisa TEST/MOCK integration + live-readiness | Complete |
 | **Phase 5 Part 1** | Transaction foundation (mock provider, RBAC, contracts) | Complete |
 | **Phase 5 Part 2** | Secure payment event processor + MOCK event ingress | Complete |
-| **Phase 5 Part 3+** | Live webhook, settlement, reconciliation, reports | Not started |
+| **Phase 5 Part 3** | Tenant-safe transaction management + CSV export | Complete |
+| **Phase 5 Part 4+** | Live webhook, settlement, live reconciliation | Not started |
 | **Phase 6** | Testing + Security + UAT + Production Deployment | Not started |

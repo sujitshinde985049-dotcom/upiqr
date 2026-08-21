@@ -1,19 +1,23 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Download } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { DataTable, type Column } from "@/components/shared/DataTable";
+import { DataTable } from "@/components/shared/DataTable";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { FilterBar } from "@/components/shared/FilterBar";
-import { StatusBadge } from "@/components/shared/StatusBadge";
-import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay";
-import { DateDisplay } from "@/components/shared/DateDisplay";
 import { ClientSelector } from "@/components/shared/ClientSelector";
 import { MerchantSelector } from "@/components/shared/MerchantSelector";
-import { TransactionDetailSheet } from "@/components/transactions/TransactionDetailSheet";
+import { Pagination } from "@/components/shared/Pagination";
+import {
+  buildTransactionListColumns,
+  TransactionSummaryCards,
+} from "@/components/transactions/transaction-shared";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -22,207 +26,161 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { onSelectValue } from "@/lib/utils/select";
+import type { SessionUser } from "@/lib/auth/types";
 import type {
   Client,
+  ManagedTransactionListResult,
   Merchant,
   QRCodeWithStats,
-  TransactionStatus,
-  TransactionWithRelations,
 } from "@/types";
+import type { TransactionManagementQuery } from "@/lib/validations/transactions";
 
 interface TransactionsPageContentProps {
   clients: Client[];
   merchants: Merchant[];
   qrs: QRCodeWithStats[];
-  initialTransactions: TransactionWithRelations[];
+  result: ManagedTransactionListResult;
+  query: TransactionManagementQuery;
+  user: SessionUser;
 }
 
-function filterTransactions(
-  transactions: TransactionWithRelations[],
-  filters: {
-    clientId?: string;
-    merchantId?: string;
-    qrId?: string;
-    status?: TransactionStatus;
-    search?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  }
-): TransactionWithRelations[] {
-  let results = transactions;
+function buildQueryString(
+  current: TransactionManagementQuery,
+  updates: Partial<TransactionManagementQuery>
+): string {
+  const next = { ...current, ...updates, page: updates.page ?? 1 };
+  const params = new URLSearchParams();
 
-  if (filters.clientId) {
-    results = results.filter((t) => t.clientId === filters.clientId);
-  }
-  if (filters.merchantId) {
-    results = results.filter((t) => t.merchantId === filters.merchantId);
-  }
-  if (filters.qrId) {
-    results = results.filter((t) => t.qrId === filters.qrId);
-  }
-  if (filters.status) {
-    results = results.filter((t) => t.status === filters.status);
-  }
-  if (filters.search) {
-    const q = filters.search.toLowerCase();
-    results = results.filter(
-      (t) =>
-        t.transactionId.toLowerCase().includes(q) ||
-        t.merchantName.toLowerCase().includes(q) ||
-        t.clientName.toLowerCase().includes(q) ||
-        t.customerVpa.toLowerCase().includes(q) ||
-        t.bankReferenceNumber.toLowerCase().includes(q)
-    );
-  }
-  if (filters.dateFrom) {
-    results = results.filter(
-      (t) => new Date(t.initiatedAt) >= new Date(filters.dateFrom!)
-    );
-  }
-  if (filters.dateTo) {
-    results = results.filter(
-      (t) => new Date(t.initiatedAt) <= new Date(filters.dateTo!)
-    );
-  }
+  if (next.search) params.set("search", next.search);
+  if (next.status !== "all") params.set("status", next.status);
+  if (next.clientId) params.set("client", next.clientId);
+  if (next.merchantId) params.set("merchant", next.merchantId);
+  if (next.qrId) params.set("qr", next.qrId);
+  if (next.providerMode !== "all") params.set("providerMode", next.providerMode);
+  if (next.fromDate) params.set("fromDate", next.fromDate);
+  if (next.toDate) params.set("toDate", next.toDate);
+  if (next.sortBy !== "initiated_at") params.set("sortBy", next.sortBy);
+  if (next.sortOrder !== "desc") params.set("sortOrder", next.sortOrder);
+  if (next.page > 1) params.set("page", String(next.page));
+  if (next.limit !== 20) params.set("limit", String(next.limit));
 
-  return results.sort(
-    (a, b) =>
-      new Date(b.initiatedAt).getTime() - new Date(a.initiatedAt).getTime()
-  );
+  const value = params.toString();
+  return value ? `?${value}` : "";
 }
 
 export function TransactionsPageContent({
   clients,
   merchants,
   qrs,
-  initialTransactions,
+  result,
+  query,
+  user,
 }: TransactionsPageContentProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const qrParam = searchParams.get("qr");
-  const [search, setSearch] = useState("");
-  const [clientFilter, setClientFilter] = useState("all");
-  const [merchantFilter, setMerchantFilter] = useState("all");
-  const [qrFilter, setQrFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [selectedTxn, setSelectedTxn] = useState<TransactionWithRelations | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [, startTransition] = useTransition();
 
-  const activeQrFilter = qrParam ?? qrFilter;
-
-  const transactions = useMemo(() => {
-    return filterTransactions(initialTransactions, {
-      clientId: clientFilter !== "all" ? clientFilter : undefined,
-      merchantId: merchantFilter !== "all" ? merchantFilter : undefined,
-      qrId: activeQrFilter !== "all" ? activeQrFilter : undefined,
-      status: statusFilter !== "all" ? (statusFilter as TransactionStatus) : undefined,
-      search: search || undefined,
-      dateFrom: dateFrom || undefined,
-      dateTo: dateTo || undefined,
+  const navigate = (updates: Partial<TransactionManagementQuery>) => {
+    startTransition(() => {
+      router.push(`/transactions${buildQueryString(query, updates)}`);
     });
-  }, [
-    initialTransactions,
-    search,
-    clientFilter,
-    merchantFilter,
-    activeQrFilter,
-    statusFilter,
-    dateFrom,
-    dateTo,
-  ]);
+  };
 
   const filteredQRs = useMemo(() => {
     let filtered = qrs;
-    if (clientFilter !== "all") filtered = filtered.filter((q) => q.clientId === clientFilter);
-    if (merchantFilter !== "all") filtered = filtered.filter((q) => q.merchantId === merchantFilter);
+    if (query.clientId) {
+      filtered = filtered.filter((qr) => qr.clientId === query.clientId);
+    }
+    if (query.merchantId) {
+      filtered = filtered.filter((qr) => qr.merchantId === query.merchantId);
+    }
     return filtered;
-  }, [qrs, clientFilter, merchantFilter]);
+  }, [qrs, query.clientId, query.merchantId]);
 
-  const columns: Column<TransactionWithRelations>[] = [
-    {
-      key: "id",
-      header: "Transaction ID",
-      cell: (t) => <span className="font-mono text-xs">{t.transactionId}</span>,
-    },
-    {
-      key: "client",
-      header: "Bank / Patsanstha",
-      cell: (t) => (
-        <span className="text-sm text-muted-foreground">{t.clientName}</span>
-      ),
-    },
-    { key: "merchant", header: "Merchant", cell: (t) => t.merchantName },
-    {
-      key: "qr",
-      header: "QR Identifier",
-      cell: (t) => <span className="font-mono text-xs">{t.qrIdentifier}</span>,
-    },
-    {
-      key: "amount",
-      header: "Amount",
-      cell: (t) => <CurrencyDisplay amount={t.amount} />,
-    },
-    {
-      key: "status",
-      header: "Status",
-      cell: (t) => <StatusBadge status={t.status} />,
-    },
-    {
-      key: "vpa",
-      header: "Customer VPA",
-      cell: (t) => <span className="font-mono text-xs">{t.customerVpa}</span>,
-    },
-    {
-      key: "ref",
-      header: "Bank Ref No.",
-      cell: (t) => <span className="font-mono text-xs">{t.bankReferenceNumber}</span>,
-    },
-    { key: "method", header: "Payment Method", cell: (t) => t.paymentMethod },
-    {
-      key: "date",
-      header: "Date & Time",
-      cell: (t) => <DateDisplay date={t.initiatedAt} relative />,
-    },
-  ];
+  const columns = buildTransactionListColumns({ user });
+
+  const handleExport = async () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    params.delete("limit");
+
+    const response = await fetch(`/api/transactions/export?${params.toString()}`);
+    if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+      toast.error(body?.error ?? "Export failed");
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download =
+      response.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] ??
+      "transactions.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast.success("Transaction export downloaded");
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Transactions"
         description="View and filter UPI transactions across the platform"
+        actions={
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        }
+      />
+
+      <TransactionSummaryCards
+        summary={result.summary}
+        providerModeFilter={query.providerMode}
       />
 
       <FilterBar>
         <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search transactions..."
+          value={query.search ?? ""}
+          onChange={(value) => navigate({ search: value || undefined })}
+          placeholder="Search by ID, reference, merchant, QR..."
           className="sm:w-56"
         />
-        <ClientSelector
-          clients={clients}
-          value={clientFilter === "all" ? undefined : clientFilter}
-          onChange={(v) => {
-            setClientFilter(v);
-            setMerchantFilter("all");
-            setQrFilter("all");
-          }}
-          includeAll
-          className="w-48"
-        />
+        {user.role !== "MERCHANT_USER" ? (
+          <ClientSelector
+            clients={clients}
+            value={query.clientId}
+            onChange={(value) =>
+              navigate({
+                clientId: value,
+                merchantId: undefined,
+                qrId: undefined,
+              })
+            }
+            includeAll
+            className="w-48"
+          />
+        ) : null}
         <MerchantSelector
           merchants={merchants}
-          value={merchantFilter === "all" ? undefined : merchantFilter}
-          onChange={(v) => {
-            setMerchantFilter(v);
-            setQrFilter("all");
-          }}
-          clientId={clientFilter !== "all" ? clientFilter : undefined}
+          value={query.merchantId}
+          onChange={(value) =>
+            navigate({ merchantId: value, qrId: undefined })
+          }
+          clientId={query.clientId}
           includeAll
           className="w-48"
         />
-        <Select value={activeQrFilter} onValueChange={onSelectValue(setQrFilter)}>
+        <Select
+          value={query.qrId ?? "all"}
+          onValueChange={onSelectValue((value) =>
+            navigate({ qrId: value === "all" ? undefined : value })
+          )}
+        >
           <SelectTrigger className="w-44">
             <SelectValue placeholder="QR Code" />
           </SelectTrigger>
@@ -235,7 +193,12 @@ export function TransactionsPageContent({
             ))}
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={onSelectValue(setStatusFilter)}>
+        <Select
+          value={query.status}
+          onValueChange={onSelectValue((value) =>
+            navigate({ status: value as TransactionManagementQuery["status"] })
+          )}
+        >
           <SelectTrigger className="w-36">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -246,39 +209,95 @@ export function TransactionsPageContent({
             <SelectItem value="failed">Failed</SelectItem>
           </SelectContent>
         </Select>
+        <Select
+          value={query.providerMode}
+          onValueChange={onSelectValue((value) =>
+            navigate({
+              providerMode: value as TransactionManagementQuery["providerMode"],
+            })
+          )}
+        >
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Provider Mode" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Modes</SelectItem>
+            <SelectItem value="mock">MOCK</SelectItem>
+            <SelectItem value="legacy">LEGACY</SelectItem>
+            <SelectItem value="live">LIVE</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="flex items-center gap-2">
-          <Label htmlFor="dateFrom" className="sr-only">From</Label>
+          <Label htmlFor="dateFrom" className="sr-only">
+            From
+          </Label>
           <Input
             id="dateFrom"
             type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
+            value={query.fromDate ?? ""}
+            onChange={(event) =>
+              navigate({ fromDate: event.target.value || undefined })
+            }
             className="w-36"
           />
           <span className="text-muted-foreground">to</span>
           <Input
             type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
+            value={query.toDate ?? ""}
+            onChange={(event) =>
+              navigate({ toDate: event.target.value || undefined })
+            }
             className="w-36"
           />
         </div>
+        <Select
+          value={query.sortBy}
+          onValueChange={onSelectValue((value) =>
+            navigate({ sortBy: value as TransactionManagementQuery["sortBy"] })
+          )}
+        >
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Sort By" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="initiated_at">Initiated At</SelectItem>
+            <SelectItem value="created_at">Created At</SelectItem>
+            <SelectItem value="amount">Amount</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={query.sortOrder}
+          onValueChange={onSelectValue((value) =>
+            navigate({
+              sortOrder: value as TransactionManagementQuery["sortOrder"],
+            })
+          )}
+        >
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="Order" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="desc">Descending</SelectItem>
+            <SelectItem value="asc">Ascending</SelectItem>
+          </SelectContent>
+        </Select>
       </FilterBar>
 
       <DataTable
         columns={columns}
-        data={transactions}
+        data={result.items}
         emptyTitle="No transactions found"
-        onRowClick={(t) => {
-          setSelectedTxn(t);
-          setSheetOpen(true);
-        }}
+        onRowClick={(transaction) => router.push(`/transactions/${transaction.id}`)}
       />
 
-      <TransactionDetailSheet
-        transaction={selectedTxn}
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
+      <Pagination
+        page={result.pagination.page}
+        totalPages={result.pagination.totalPages}
+        total={result.pagination.total}
+        pageSize={result.pagination.limit}
+        itemLabel="transactions"
+        onPageChange={(page) => navigate({ page })}
       />
     </div>
   );

@@ -135,9 +135,47 @@ export interface QRCodeWithStats extends QRCode {
 
 export interface TransactionWithRelations extends Transaction {
   merchantName: string;
+  merchantCode: string;
   clientName: string;
+  clientCode: string;
   qrName: string;
   qrIdentifier: string;
+  createdAt: string;
+  reconciliationStatus?: "NOT_APPLICABLE" | "UNVERIFIED" | "MATCHED" | "MISMATCH";
+}
+
+export interface TransactionSummaryMetrics {
+  total: number;
+  successful: number;
+  pending: number;
+  failed: number;
+  successfulAmount: number;
+  successfulAmountByProviderMode: {
+    mock: number;
+    legacy: number;
+    live: number;
+  };
+}
+
+export interface TransactionDetail extends TransactionWithRelations {
+  paymentEvents: Array<{
+    id: string;
+    receivedAt: string;
+    processedAt?: string;
+    processingStatus: string;
+    failureReasonCode?: string;
+  }>;
+}
+
+export interface ManagedTransactionListResult {
+  items: TransactionWithRelations[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  summary: TransactionSummaryMetrics;
 }
 
 export interface DashboardKPIs {

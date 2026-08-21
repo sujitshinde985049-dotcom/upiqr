@@ -3,8 +3,8 @@ import { AuthError, requireAuthenticatedUser } from "@/lib/auth/authorization";
 import {
   getQRCodeByIdForUser,
   getQRStatsForUser,
-  getTransactionsByQRIdForUser,
 } from "@/lib/services/data-service";
+import { listManagedTransactionsForScope } from "@/lib/services/transaction-management-service";
 import type { SessionUser } from "@/lib/auth/types";
 import { QRDetailPageContent } from "./qr-detail-content";
 
@@ -15,7 +15,7 @@ async function loadQRDetail(id: string, user: SessionUser) {
 
     const [stats, transactions] = await Promise.all([
       getQRStatsForUser(id, user),
-      getTransactionsByQRIdForUser(id, user),
+      listManagedTransactionsForScope(user, { qrId: id, limit: 100 }),
     ]);
 
     if (!stats) return null;
