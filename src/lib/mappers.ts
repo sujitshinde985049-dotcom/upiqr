@@ -159,7 +159,9 @@ type DbQRCode = {
   createdAt: Date;
 };
 
-function toUiProviderMode(mode: DbQRCode["providerMode"]): QRCode["providerMode"] {
+function toUiProviderModeValue(
+  mode: "MOCK" | "LIVE" | "LEGACY"
+): QRCode["providerMode"] {
   return mode.toLowerCase() as QRCode["providerMode"];
 }
 
@@ -170,7 +172,7 @@ export function mapQRCode(qr: DbQRCode): QRCode {
     merchantId: qr.merchantId,
     sabpaisaQrId: qr.sabpaisaQrId ?? undefined,
     provider: qr.provider,
-    providerMode: toUiProviderMode(qr.providerMode),
+    providerMode: toUiProviderModeValue(qr.providerMode),
     qrName: qr.qrName,
     qrIdentifier: qr.qrIdentifier,
     railId: toUiPaymentRail(qr.railId),
@@ -196,14 +198,26 @@ type DbTransaction = {
   merchantId: string;
   qrId: string;
   transactionId: string;
+  provider: string;
+  providerMode: "MOCK" | "LIVE" | "LEGACY";
+  providerTransactionId: string | null;
   amount: { toString(): string };
   status: TransactionStatus;
+  railId: PaymentRail | null;
   customerVpa: string | null;
+  customerName: string | null;
+  referenceNumber: string | null;
   bankReferenceNumber: string | null;
   paymentMethod: string | null;
   initiatedAt: Date;
   completedAt: Date | null;
 };
+
+function toUiTransactionProviderMode(
+  mode: DbTransaction["providerMode"]
+): Transaction["providerMode"] {
+  return toUiProviderModeValue(mode);
+}
 
 export function mapTransaction(txn: DbTransaction): Transaction {
   return {
@@ -212,9 +226,15 @@ export function mapTransaction(txn: DbTransaction): Transaction {
     merchantId: txn.merchantId,
     qrId: txn.qrId,
     transactionId: txn.transactionId,
+    provider: txn.provider,
+    providerMode: toUiTransactionProviderMode(txn.providerMode),
+    providerTransactionId: txn.providerTransactionId ?? undefined,
     amount: decimalToNumber(txn.amount),
     status: toUiTransactionStatus(txn.status),
+    railId: txn.railId ? toUiPaymentRail(txn.railId) : undefined,
     customerVpa: txn.customerVpa ?? "",
+    customerName: txn.customerName ?? undefined,
+    referenceNumber: txn.referenceNumber ?? undefined,
     bankReferenceNumber: txn.bankReferenceNumber ?? "",
     paymentMethod: txn.paymentMethod ?? "",
     initiatedAt: txn.initiatedAt.toISOString(),

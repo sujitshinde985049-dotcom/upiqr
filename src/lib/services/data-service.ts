@@ -18,10 +18,13 @@ import {
   mapClient,
   mapMerchant,
   mapQRCode,
-  mapTransaction,
   mapUser,
   decimalToNumber,
 } from "@/lib/mappers";
+import {
+  getTransactionsByQRIdForUser as listQRTransactions,
+  getTransactionsWithRelationsForUser,
+} from "@/lib/services/transaction-service";
 import type {
   ChartDataPoint,
   ClientWithStats,
@@ -321,79 +324,14 @@ export async function getTransactionsWithRelations(
     dateTo?: string;
   }
 ): Promise<TransactionWithRelations[]> {
-  const scope = getMerchantScopeFilter(user);
-  const where: Prisma.TransactionWhereInput = { ...scope };
-
-  if (filters?.clientId) {
-    requireClientAccess(user, filters.clientId);
-    where.clientId = filters.clientId;
-  }
-  if (filters?.merchantId) {
-    const merchant = await prisma.merchant.findUnique({
-      where: { id: filters.merchantId },
-    });
-    if (merchant) await requireMerchantAccess(user, merchant.id, merchant.clientId);
-    where.merchantId = filters.merchantId;
-  }
-  if (filters?.qrId) where.qrId = filters.qrId;
-  if (filters?.status) {
-    where.status = filters.status.toUpperCase() as TransactionStatus;
-  }
-  if (filters?.search) {
-    const q = filters.search;
-    where.OR = [
-      { transactionId: { contains: q, mode: "insensitive" } },
-      { customerVpa: { contains: q, mode: "insensitive" } },
-      { bankReferenceNumber: { contains: q, mode: "insensitive" } },
-    ];
-  }
-  if (filters?.dateFrom) {
-    where.initiatedAt = { ...(where.initiatedAt as object), gte: new Date(filters.dateFrom) };
-  }
-  if (filters?.dateTo) {
-    where.initiatedAt = { ...(where.initiatedAt as object), lte: new Date(filters.dateTo) };
-  }
-
-  const transactions = await prisma.transaction.findMany({
-    where,
-    include: {
-      client: true,
-      merchant: true,
-      qrCode: true,
-    },
-    orderBy: { initiatedAt: "desc" },
-  });
-
-  return transactions.map((t) => ({
-    ...mapTransaction(t),
-    merchantName: t.merchant.businessName,
-    clientName: t.client.name,
-    qrName: t.qrCode.qrName,
-    qrIdentifier: t.qrCode.qrIdentifier,
-  }));
+  return getTransactionsWithRelationsForUser(user, filters);
 }
 
 export async function getTransactionsByQRIdForUser(
   qrId: string,
   user: SessionUser
 ) {
-  const qr = await prisma.qRCode.findUnique({ where: { id: qrId } });
-  if (!qr) return [];
-  await requireMerchantAccess(user, qr.merchantId, qr.clientId);
-
-  const transactions = await prisma.transaction.findMany({
-    where: { qrId },
-    include: { client: true, merchant: true, qrCode: true },
-    orderBy: { initiatedAt: "desc" },
-  });
-
-  return transactions.map((t) => ({
-    ...mapTransaction(t),
-    merchantName: t.merchant.businessName,
-    clientName: t.client.name,
-    qrName: t.qrCode.qrName,
-    qrIdentifier: t.qrCode.qrIdentifier,
-  }));
+  return listQRTransactions(qrId, user);
 }
 
 export async function getDashboardKPIsForUser(

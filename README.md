@@ -17,7 +17,9 @@ Merchant User
         ↓
 QR Code (Phase 4 — SabPaisa)
         ↓
-UPI Transactions (seeded demo data in Phase 3)
+SabPaisa Provider Abstraction
+        ↓
+Transactions (Phase 5 Part 1 — MOCK foundation)
 ```
 
 Every record follows strict multi-tenant ownership:
@@ -245,6 +247,60 @@ npm run test:sabpaisa-foundation # Foundation (17 PASS + 3 BLOCKED crypto)
 
 **Production policy note:** Deactivating a Client or Merchant does not hard-delete existing QR/transaction history records. New QR creation requires active Client and Merchant.
 
+## Phase 5 Part 1 — Transaction Foundation (COMPLETE)
+
+**Live SabPaisa transaction API is NOT enabled.**  
+**Webhook payment confirmation is NOT implemented.**
+
+```text
+Application/UI → transaction-service.ts → SabPaisaTransactionProvider
+                                              ├── MockSabPaisaTransactionProvider (active)
+                                              └── LiveSabPaisaTransactionProvider (disabled, fail-closed)
+```
+
+### SabPaisa transaction contract (reference only)
+
+Documented read endpoints modeled in `src/lib/sabpaisa/transaction-types.ts`:
+
+- `GET /api/v2/transactions` — pagination uses `totalPages`
+- `GET /api/v2/qr/:qr_id/transactions` — pagination uses `total_pages`
+
+No network request occurs in `SABPAISA_MODE=mock`.
+
+### Local transaction mapping
+
+Prisma `Transaction` records map tenant ownership, provider metadata, and monetary fields:
+
+- `clientId`, `merchantId`, `qrId` resolved server-side from QR relationships
+- `provider`, `providerMode`, `providerTransactionId` with uniqueness on `(provider, providerMode, providerTransactionId)`
+- `amount` stored as `Decimal(12,2)` — not JavaScript float
+- `referenceNumber`, `bankReferenceNumber`, `customerVpa`, `customerName`, `paymentMethod`, `railId`, timestamps
+
+Legacy seeded transactions remain `providerMode=LEGACY` and are **not** classified as live payments.
+
+### Mock/test transactions
+
+- Generated only via `src/lib/test-fixtures/mock-transaction-fixture.ts` (requires `ALLOW_MOCK_TRANSACTION_FIXTURES=true` outside production)
+- Synthetic IDs such as `mock_txn_*`, VPA `test-customer@mock`, references prefixed `MOCK-*`
+- UI shows **TEST/LEGACY** badges — mock data is **not proof of real payment**
+- No manual transaction edit workflow (amount/status/QR/merchant/client are immutable for normal users)
+
+### Tenant security
+
+- `SUPER_ADMIN` — platform-wide reads
+- `CLIENT_ADMIN` / `CLIENT_OPERATOR` — own client only
+- `MERCHANT_USER` — own merchant only
+- Customer VPA masked in list views; not written to audit metadata for fixture creation
+
+### Phase 5 Part 1 test suite
+
+```bash
+npm run test:transaction-provider-contract  # SabPaisa transaction contract shape (8/8)
+npm run test:phase5-part1                   # Transaction foundation + security (35/35)
+```
+
+**Not implemented in Part 1:** webhook receiver, live transaction API, settlement, reconciliation, refunds, reports/export, analytics.
+
 ## Installation
 
 ```bash
@@ -344,6 +400,8 @@ npm run test:qr-mock-security     # SabPaisa Phase 4 Part 2 security
 npm run test:qr-management        # SabPaisa Phase 4 Part 3 management
 npm run test:phase4-e2e-mock      # Phase 4 end-to-end mock workflow
 npm run test:phase4-final         # Phase 4 live-readiness + final verification
+npm run test:transaction-provider-contract # Phase 5 Part 1 SabPaisa transaction contract
+npm run test:phase5-part1         # Phase 5 Part 1 transaction foundation + security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -403,6 +461,8 @@ scripts/
   verify-qr-management.ts
   verify-phase4-e2e-mock.ts
   verify-phase4-final.ts
+  verify-transaction-provider-contract.ts
+  verify-phase5-part1.ts
 docs/
   SABPAISA_LIVE_READINESS.md
 ```
@@ -415,7 +475,8 @@ docs/
 - **Reports CSV export** — mock implementation
 - **Settings persistence** — general/notification settings not stored in database
 - **SabPaisa live QR** — mock mode only; see `docs/SABPAISA_LIVE_READINESS.md`; crypto interop BLOCKED
-- **Transactions** — seeded development data; not live payment sync
+- **Transactions** — Phase 5 Part 1 mock foundation; seeded LEGACY data preserved; not live payment sync
+- **Webhook / settlement / reconciliation** — not implemented
 
 ## Future Roadmap
 
@@ -425,5 +486,6 @@ docs/
 | **Phase 2** | PostgreSQL + Prisma + Auth + RBAC + Tenant Isolation | Complete |
 | **Phase 3** | Bank/Patsanstha + Merchant Onboarding + User Management | Complete |
 | **Phase 4** | SabPaisa TEST/MOCK integration + live-readiness | Complete |
-| **Phase 5** | Transactions + Payment Sync + Reports | Not started |
+| **Phase 5 Part 1** | Transaction foundation (mock provider, RBAC, contracts) | Complete |
+| **Phase 5 Part 2+** | Webhooks, live sync, settlement, reports | Not started |
 | **Phase 6** | Testing + Security + UAT + Production Deployment | Not started |

@@ -52,7 +52,14 @@ export function QRDetailPageContent({
     {
       key: "id",
       header: "Transaction ID",
-      cell: (t) => <span className="font-mono text-xs">{t.transactionId}</span>,
+      cell: (t) => (
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-xs">{t.transactionId}</span>
+          {(t.providerMode === "mock" || t.providerMode === "legacy") && (
+            <ProviderModeBadge mode={t.providerMode} isPayable={false} />
+          )}
+        </div>
+      ),
     },
     {
       key: "amount",
@@ -65,14 +72,39 @@ export function QRDetailPageContent({
       cell: (t) => <StatusBadge status={t.status} />,
     },
     {
-      key: "vpa",
-      header: "Customer VPA",
-      cell: (t) => <span className="font-mono text-xs">{t.customerVpa}</span>,
+      key: "paymentMethod",
+      header: "Payment Method",
+      cell: (t) => t.paymentMethod || "—",
     },
     {
-      key: "date",
-      header: "Date",
-      cell: (t) => <DateDisplay date={t.initiatedAt} relative />,
+      key: "customerName",
+      header: "Customer Name",
+      cell: (t) => t.customerName || "—",
+    },
+    {
+      key: "vpa",
+      header: "Customer VPA",
+      cell: (t) => (
+        <span className="font-mono text-xs">{t.customerVpa || "—"}</span>
+      ),
+    },
+    {
+      key: "bankReference",
+      header: "Bank Reference",
+      cell: (t) => (
+        <span className="font-mono text-xs">{t.bankReferenceNumber || "—"}</span>
+      ),
+    },
+    {
+      key: "initiatedAt",
+      header: "Initiated At",
+      cell: (t) => <DateDisplay date={t.initiatedAt} />,
+    },
+    {
+      key: "completedAt",
+      header: "Completed At",
+      cell: (t) =>
+        t.completedAt ? <DateDisplay date={t.completedAt} /> : "—",
     },
   ];
 

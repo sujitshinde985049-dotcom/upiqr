@@ -121,6 +121,8 @@ async function main() {
         merchantId: txn.merchantId,
         qrId: txn.qrId,
         transactionId: txn.transactionId,
+        provider: "sabpaisa",
+        providerMode: "LEGACY",
         amount: txn.amount,
         status: toTransactionStatus(txn.status),
         customerVpa: txn.customerVpa,

@@ -84,9 +84,15 @@ export interface Transaction {
   merchantId: string;
   qrId: string;
   transactionId: string;
+  provider: string;
+  providerMode: QRProviderMode;
+  providerTransactionId?: string;
   amount: number;
   status: TransactionStatus;
+  railId?: PaymentRail;
   customerVpa: string;
+  customerName?: string;
+  referenceNumber?: string;
   bankReferenceNumber: string;
   paymentMethod: string;
   initiatedAt: string;

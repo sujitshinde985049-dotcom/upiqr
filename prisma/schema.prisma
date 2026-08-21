@@ -162,26 +162,32 @@ model QRCode {
 }
 
 model Transaction {
-  id                  String            @id
-  clientId            String
-  merchantId          String
-  qrId                String
-  transactionId       String            @unique
-  amount              Decimal           @db.Decimal(12, 2)
-  status              TransactionStatus
-  customerVpa         String?
-  customerName        String?
-  bankReferenceNumber String?
-  paymentMethod       String?
-  initiatedAt         DateTime
-  completedAt         DateTime?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  id                    String            @id
+  clientId              String
+  merchantId            String
+  qrId                  String
+  transactionId         String            @unique
+  provider              String            @default("sabpaisa")
+  providerMode          QRProviderMode    @default(LEGACY)
+  providerTransactionId String?
+  amount                Decimal           @db.Decimal(12, 2)
+  status                TransactionStatus
+  railId                PaymentRail?
+  customerVpa           String?
+  customerName          String?
+  referenceNumber       String?
+  bankReferenceNumber   String?
+  paymentMethod         String?
+  initiatedAt           DateTime
+  completedAt           DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
   client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   qrCode   QRCode   @relation(fields: [qrId], references: [id], onDelete: Cascade)
 
+  @@unique([provider, providerMode, providerTransactionId])
   @@index([clientId])
   @@index([merchantId])
   @@index([qrId])
@@ -189,6 +195,7 @@ model Transaction {
   @@index([initiatedAt])
   @@index([clientId, status])
   @@index([merchantId, status])
+  @@index([providerMode])
 }
 
 model AuditLog {

@@ -8,8 +8,18 @@ const formatDate = (daysAgo: number, hours = 10, minutes = 0) => {
   return d.toISOString();
 };
 
+function legacyTransaction(
+  txn: Omit<Transaction, "provider" | "providerMode">
+): Transaction {
+  return {
+    ...txn,
+    provider: "sabpaisa",
+    providerMode: "legacy",
+  };
+}
+
 export const mockTransactions: Transaction[] = [
-  {
+  legacyTransaction({
     id: "TXN001",
     clientId: "CLT001",
     merchantId: "MCH001",
@@ -22,8 +32,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(0, 9, 15),
     completedAt: formatDate(0, 9, 16),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN002",
     clientId: "CLT001",
     merchantId: "MCH002",
@@ -36,8 +46,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(0, 10, 30),
     completedAt: formatDate(0, 10, 31),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN003",
     clientId: "CLT001",
     merchantId: "MCH003",
@@ -50,8 +60,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(0, 11, 45),
     completedAt: formatDate(0, 11, 46),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN004",
     clientId: "CLT002",
     merchantId: "MCH004",
@@ -63,8 +73,8 @@ export const mockTransactions: Transaction[] = [
     bankReferenceNumber: "HDFC20250819003",
     paymentMethod: "UPI",
     initiatedAt: formatDate(0, 12, 0),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN005",
     clientId: "CLT002",
     merchantId: "MCH005",
@@ -77,8 +87,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(0, 13, 20),
     completedAt: formatDate(0, 13, 22),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN006",
     clientId: "CLT001",
     merchantId: "MCH001",
@@ -91,8 +101,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(0, 14, 10),
     completedAt: formatDate(0, 14, 12),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN007",
     clientId: "CLT003",
     merchantId: "MCH006",
@@ -105,8 +115,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(1, 8, 30),
     completedAt: formatDate(1, 8, 31),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN008",
     clientId: "CLT003",
     merchantId: "MCH007",
@@ -119,8 +129,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(1, 13, 0),
     completedAt: formatDate(1, 13, 1),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN009",
     clientId: "CLT001",
     merchantId: "MCH003",
@@ -133,8 +143,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(2, 16, 45),
     completedAt: formatDate(2, 16, 46),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN010",
     clientId: "CLT002",
     merchantId: "MCH004",
@@ -147,8 +157,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(2, 10, 0),
     completedAt: formatDate(2, 10, 1),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN011",
     clientId: "CLT001",
     merchantId: "MCH001",
@@ -161,8 +171,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(3, 11, 0),
     completedAt: formatDate(3, 11, 1),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN012",
     clientId: "CLT002",
     merchantId: "MCH005",
@@ -175,8 +185,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(4, 9, 0),
     completedAt: formatDate(4, 9, 2),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN013",
     clientId: "CLT001",
     merchantId: "MCH002",
@@ -189,8 +199,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(5, 15, 30),
     completedAt: formatDate(5, 15, 31),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN014",
     clientId: "CLT003",
     merchantId: "MCH006",
@@ -203,8 +213,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(6, 17, 0),
     completedAt: formatDate(6, 17, 1),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN015",
     clientId: "CLT001",
     merchantId: "MCH001",
@@ -217,8 +227,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(7, 12, 0),
     completedAt: formatDate(7, 12, 1),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN016",
     clientId: "CLT002",
     merchantId: "MCH005",
@@ -231,8 +241,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(9, 10, 0),
     completedAt: formatDate(9, 10, 3),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN017",
     clientId: "CLT003",
     merchantId: "MCH007",
@@ -245,8 +255,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(11, 20, 0),
     completedAt: formatDate(11, 20, 5),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN018",
     clientId: "CLT001",
     merchantId: "MCH003",
@@ -259,8 +269,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(14, 14, 0),
     completedAt: formatDate(14, 14, 2),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN019",
     clientId: "CLT002",
     merchantId: "MCH004",
@@ -273,8 +283,8 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(18, 11, 0),
     completedAt: formatDate(18, 11, 1),
-  },
-  {
+  }),
+  legacyTransaction({
     id: "TXN020",
     clientId: "CLT001",
     merchantId: "MCH002",
@@ -287,5 +297,5 @@ export const mockTransactions: Transaction[] = [
     paymentMethod: "UPI",
     initiatedAt: formatDate(22, 9, 30),
     completedAt: formatDate(22, 9, 31),
-  },
+  }),
 ];
