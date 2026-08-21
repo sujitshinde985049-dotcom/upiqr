@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Plus, Eye, Download, ArrowLeftRight, Power } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Plus,
+  Eye,
+  Download,
+  ArrowLeftRight,
+  Power,
+  Pencil,
+  RotateCcw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { DataTable, type Column } from "@/components/shared/DataTable";
@@ -13,7 +21,9 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { CurrencyDisplay } from "@/components/shared/CurrencyDisplay";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Pagination } from "@/components/shared/Pagination";
 import { GenerateQRDialog } from "@/components/qr/GenerateQRDialog";
+import { EditQRDialog } from "@/components/qr/EditQRDialog";
 import { ProviderModeBadge } from "@/components/qr/ProviderModeBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,49 +33,80 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { onSelectValue } from "@/lib/utils/select";
-import { updateQRStatusAction } from "@/lib/actions/qr-actions";
+import {
+  deactivateQRAction,
+  reactivateQRAction,
+} from "@/lib/actions/qr-actions";
+import type { PaginatedQRCodesResult } from "@/lib/services/qr-service";
+import type { QRListQuery } from "@/lib/validations/qr";
 import type { Client, Merchant, QRCodeWithStats } from "@/types";
 
 interface QRCodesPageContentProps {
-  initialQRCodes: QRCodeWithStats[];
+  result: PaginatedQRCodesResult;
+  query: QRListQuery;
   clients: Client[];
   merchants: Merchant[];
 }
 
+function buildQueryString(query: QRListQuery): string {
+  const params = new URLSearchParams();
+  if (query.page > 1) params.set("page", String(query.page));
+  if (query.limit !== 20) params.set("limit", String(query.limit));
+  if (query.search) params.set("search", query.search);
+  if (query.status !== "all") params.set("status", query.status);
+  if (query.railId !== "all") params.set("railId", query.railId);
+  if (query.category) params.set("category", query.category);
+  if (query.sortBy !== "created_at") params.set("sortBy", query.sortBy);
+  if (query.sortOrder !== "desc") params.set("sortOrder", query.sortOrder);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+export function QRCodesPageFallback() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-64" />
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-96 w-full" />
+    </div>
+  );
+}
+
 export function QRCodesPageContent({
-  initialQRCodes,
-  clients,
+  result,
+  query,
   merchants,
 }: QRCodesPageContentProps) {
   const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [railFilter, setRailFilter] = useState("all");
+  const pathname = usePathname();
+  const [, startTransition] = useTransition();
+
+  const [search, setSearch] = useState(query.search ?? "");
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [reactivateOpen, setReactivateOpen] = useState(false);
   const [selectedQR, setSelectedQR] = useState<QRCodeWithStats | null>(null);
 
-  const qrCodes = useMemo(() => {
-    let data = initialQRCodes;
-    if (search) {
-      const q = search.toLowerCase();
-      data = data.filter(
-        (qr) =>
-          qr.qrName.toLowerCase().includes(q) ||
-          qr.qrIdentifier.toLowerCase().includes(q) ||
-          qr.merchantName.toLowerCase().includes(q) ||
-          qr.id.toLowerCase().includes(q)
-      );
-    }
-    if (statusFilter !== "all") {
-      data = data.filter((qr) => qr.status === statusFilter);
-    }
-    if (railFilter !== "all") {
-      data = data.filter((qr) => qr.railId === railFilter);
-    }
-    return data;
-  }, [initialQRCodes, search, statusFilter, railFilter]);
+  const navigate = useCallback(
+    (next: QRListQuery) => {
+      startTransition(() => {
+        router.push(`${pathname}${buildQueryString(next)}`);
+      });
+    },
+    [pathname, router]
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if ((query.search ?? "") !== search) {
+        navigate({ ...query, page: 1, search: search || undefined });
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, query, navigate]);
 
   const columns: Column<QRCodeWithStats>[] = [
     {
@@ -125,28 +166,48 @@ export function QRCodesPageContent({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() =>
-              toast.info("Download started (Demo)", { description: qr.qrName })
-            }
+            onClick={() => {
+              setSelectedQR(qr);
+              setEditOpen(true);
+            }}
           >
-            <Download className="h-4 w-4" />
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+            <a href={`/api/qr/${qr.id}/download?format=png&size=512`} download>
+              <Download className="h-4 w-4" />
+            </a>
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
             <Link href={`/transactions?qr=${qr.id}`}>
               <ArrowLeftRight className="h-4 w-4" />
             </Link>
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => {
-              setSelectedQR(qr);
-              setConfirmOpen(true);
-            }}
-          >
-            <Power className="h-4 w-4" />
-          </Button>
+          {qr.status === "active" ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => {
+                setSelectedQR(qr);
+                setDeactivateOpen(true);
+              }}
+            >
+              <Power className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => {
+                setSelectedQR(qr);
+                setReactivateOpen(true);
+              }}
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       ),
     },
@@ -166,8 +227,8 @@ export function QRCodesPageContent({
       />
 
       <div className="rounded-lg border border-amber-500/30 bg-amber-50/50 p-4 text-sm text-amber-900">
-        SabPaisa contract mock mode is active. New QR records are TEST only and are
-        not payable. No live SabPaisa network request is made.
+        SabPaisa contract mock mode is active. QR records are TEST only and are not
+        payable. No live SabPaisa network request is made.
       </div>
 
       <FilterBar>
@@ -177,7 +238,12 @@ export function QRCodesPageContent({
           placeholder="Search QR codes..."
           className="sm:w-64"
         />
-        <Select value={statusFilter} onValueChange={onSelectValue(setStatusFilter)}>
+        <Select
+          value={query.status}
+          onValueChange={onSelectValue((value) =>
+            navigate({ ...query, page: 1, status: value as QRListQuery["status"] })
+          )}
+        >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -187,7 +253,12 @@ export function QRCodesPageContent({
             <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={railFilter} onValueChange={onSelectValue(setRailFilter)}>
+        <Select
+          value={query.railId}
+          onValueChange={onSelectValue((value) =>
+            navigate({ ...query, page: 1, railId: value as QRListQuery["railId"] })
+          )}
+        >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Rail" />
           </SelectTrigger>
@@ -199,7 +270,20 @@ export function QRCodesPageContent({
         </Select>
       </FilterBar>
 
-      <DataTable columns={columns} data={qrCodes} emptyTitle="No QR codes found" />
+      <DataTable
+        columns={columns}
+        data={result.items}
+        emptyTitle="No QR codes found"
+      />
+
+      <Pagination
+        page={result.page}
+        totalPages={result.totalPages}
+        pageSize={result.limit}
+        total={result.total}
+        itemLabel="QR codes"
+        onPageChange={(page) => navigate({ ...query, page })}
+      />
 
       <GenerateQRDialog
         open={generateOpen}
@@ -207,24 +291,43 @@ export function QRCodesPageContent({
         merchants={merchants}
       />
 
+      <EditQRDialog qr={selectedQR} open={editOpen} onOpenChange={setEditOpen} />
+
       <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Deactivate QR Code"
-        description={`Are you sure you want to deactivate "${selectedQR?.qrName}"? This action can be reversed later.`}
+        open={deactivateOpen}
+        onOpenChange={setDeactivateOpen}
+        title="Deactivate this QR?"
+        description={`Are you sure you want to deactivate "${selectedQR?.qrName}"? This is a soft deactivate and can be reversed later.`}
         confirmLabel="Deactivate"
         destructive
         onConfirm={async () => {
           if (!selectedQR) return;
-          const result = await updateQRStatusAction(selectedQR.id, "inactive");
-          if (!result.success) {
-            toast.error(result.error);
+          const resultAction = await deactivateQRAction(selectedQR.id);
+          if (!resultAction.success) {
+            toast.error(resultAction.error);
             return;
           }
-          toast.success("QR code deactivated", {
-            description: selectedQR.qrName,
-          });
-          setConfirmOpen(false);
+          toast.success("QR code deactivated", { description: selectedQR.qrName });
+          setDeactivateOpen(false);
+          router.refresh();
+        }}
+      />
+
+      <ConfirmDialog
+        open={reactivateOpen}
+        onOpenChange={setReactivateOpen}
+        title="Reactivate this QR?"
+        description={`Reactivate "${selectedQR?.qrName}"? This will restore active status without creating a new QR record.`}
+        confirmLabel="Reactivate"
+        onConfirm={async () => {
+          if (!selectedQR) return;
+          const resultAction = await reactivateQRAction(selectedQR.id);
+          if (!resultAction.success) {
+            toast.error(resultAction.error);
+            return;
+          }
+          toast.success("QR code reactivated", { description: selectedQR.qrName });
+          setReactivateOpen(false);
           router.refresh();
         }}
       />

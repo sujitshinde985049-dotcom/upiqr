@@ -134,7 +134,7 @@ Server-only SabPaisa foundation under `src/lib/sabpaisa/`:
 **No live SabPaisa QR API call is performed in Phase 4 Part 1.**  
 `POST /api/v2/qr` is not implemented. Encryption encrypt/decrypt interoperability is **blocked** until SabPaisa-provided PBKDF2/HMAC derivation details are available from the official SabQR v2.1 helper.
 
-### Part 2 — SabPaisa Contract Mock QR (current)
+### Part 2 — SabPaisa Contract Mock QR (complete)
 
 Full TEST QR generation workflow using a SabPaisa-compatible **mock adapter**:
 
@@ -172,11 +172,41 @@ Merchant → Generate QR UI → Server Auth → RBAC → Tenant Check
 **Tests:**
 
 ```bash
-npm run test:qr-provider-contract  # 16/16 — SabPaisa create response + error normalization
-npm run test:qr-mock-security      # 22/22 — RBAC, tenant isolation, validation, idempotency
+npm run test:qr-provider-contract  # SabPaisa create response + error normalization
+npm run test:qr-mock-security      # RBAC, tenant isolation, validation, idempotency
 ```
 
 **Not implemented in Part 2:** live SabPaisa HTTP calls, webhooks, transactions, settlement, reconciliation, bulk QR.
+
+### Part 3 — Mock QR Management (current)
+
+SabQR API v2.1 management operations in **mock mode** — no live SabPaisa HTTP requests:
+
+| Operation | Contract reference | MahaCred implementation |
+|-----------|-------------------|-------------------------|
+| List | `GET /api/v2/qr` | Server-side pagination, search, filters, tenant scope |
+| Details | `GET /api/v2/qr/:qr_id` | QR detail page |
+| Update | `PUT /api/v2/qr/:qr_id` | Edit dialog; immutable VPA/merchant/client/provider fields |
+| Deactivate | `DELETE /api/v2/qr/:qr_id` | Soft deactivate (`status=inactive`); pending txn guard |
+| Reactivate | `POST /api/v2/qr/:qr_id/activate` | Restore active status without duplicate record |
+| Download | `GET /api/v2/qr/:qr_id/download` | PNG/SVG test artifacts via `/api/qr/[id]/download` |
+
+**Download safety:**
+
+- PNG/SVG encode `MAHACRED_TEST_QR:<localId>` — **NOT** a payable `upi://pay` destination
+- PDF rejected with `FORMAT_NOT_SUPPORTED` (per SabPaisa documentation)
+- Filename pattern: `test_qr_<id>.png`
+- All mock downloads marked TEST / NOT PAYABLE
+
+**Audit events:** `QR_UPDATED`, `QR_DEACTIVATED`, `QR_REACTIVATED`, `QR_DOWNLOADED`
+
+**Tests:**
+
+```bash
+npm run test:qr-management  # List, update, deactivate, reactivate, download, RBAC
+```
+
+**Not implemented in Part 3:** regenerate, QR transactions API, QR analytics, webhooks, settlement, live SabPaisa calls.
 
 ## Installation
 
@@ -274,6 +304,7 @@ npm run test:user-validation      # User input validation
 npm run test:sabpaisa-foundation  # SabPaisa Phase 4 Part 1 foundation
 npm run test:qr-provider-contract # SabPaisa Phase 4 Part 2 mock contract
 npm run test:qr-mock-security     # SabPaisa Phase 4 Part 2 security
+npm run test:qr-management        # SabPaisa Phase 4 Part 3 management
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -295,6 +326,7 @@ npm run test:user-validation
 npm run test:sabpaisa-foundation
 npm run test:qr-provider-contract
 npm run test:qr-mock-security
+npm run test:qr-management
 ```
 
 ## Project Structure
@@ -327,6 +359,7 @@ scripts/
   verify-sabpaisa-foundation.ts
   verify-qr-provider-contract.ts
   verify-qr-mock-security.ts
+  verify-qr-management.ts
 ```
 
 ## Remaining Limitations (Post Phase 3)
@@ -346,6 +379,6 @@ scripts/
 | **Phase 1** | UI + Frontend Architecture | Complete |
 | **Phase 2** | PostgreSQL + Prisma + Auth + RBAC + Tenant Isolation | Complete |
 | **Phase 3** | Bank/Patsanstha + Merchant Onboarding + User Management | Complete |
-| **Phase 4** | SabPaisa Authentication + Encryption + QR APIs | Part 2 mock QR workflow complete |
+| **Phase 4** | SabPaisa Authentication + Encryption + QR APIs | Part 3 mock QR management complete |
 | **Phase 5** | Transactions + Payment Sync + Reports | Not started |
 | **Phase 6** | Testing + Security + UAT + Production Deployment | Not started |

@@ -213,6 +213,10 @@ export function canCreateQR(user: SessionUser): boolean {
   );
 }
 
+export function canManageQR(user: SessionUser): boolean {
+  return canCreateQR(user);
+}
+
 export function resolveUserClientIdForCreate(
   user: SessionUser,
   submittedClientId?: string | null

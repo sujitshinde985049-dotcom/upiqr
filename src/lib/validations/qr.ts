@@ -47,3 +47,54 @@ export const generateMerchantQRSchema = z
   });
 
 export type GenerateMerchantQRInput = z.infer<typeof generateMerchantQRSchema>;
+
+export const updateMerchantQRSchema = z
+  .object({
+    qrId: z.string().min(1, "QR ID is required"),
+    referenceName: z
+      .string()
+      .trim()
+      .min(3, "QR name must be at least 3 characters")
+      .max(100, "QR name must be at most 100 characters")
+      .optional(),
+    description: z
+      .string()
+      .trim()
+      .max(500, "Description must be at most 500 characters")
+      .optional(),
+    category: z.string().trim().max(100).optional(),
+    notes: z.string().trim().max(500).optional(),
+    status: z.enum(["active", "inactive"]).optional(),
+  })
+  .strict()
+  .refine(
+    (data) =>
+      data.referenceName !== undefined ||
+      data.description !== undefined ||
+      data.category !== undefined ||
+      data.notes !== undefined ||
+      data.status !== undefined,
+    { message: "No valid fields to update" }
+  );
+
+export const qrListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.enum(["active", "inactive", "all"]).default("all"),
+  category: z.string().trim().optional(),
+  search: z.string().trim().optional(),
+  fromDate: z.string().trim().optional(),
+  toDate: z.string().trim().optional(),
+  sortBy: z.enum(["created_at", "qr_name", "status"]).default("created_at"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  railId: z.enum(["HDFC", "ICICI", "all"]).default("all"),
+});
+
+export const qrDownloadQuerySchema = z.object({
+  format: z.enum(["png", "svg", "pdf"]).default("png"),
+  size: z.coerce.number().int().min(128).max(2048).default(512),
+});
+
+export type UpdateMerchantQRInput = z.infer<typeof updateMerchantQRSchema>;
+export type QRListQuery = z.infer<typeof qrListQuerySchema>;
+export type QRDownloadQuery = z.infer<typeof qrDownloadQuerySchema>;

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download, Power, ArrowLeftRight } from "lucide-react";
+import { Download, Power, ArrowLeftRight, Pencil, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
@@ -14,10 +14,14 @@ import { DataTable, type Column } from "@/components/shared/DataTable";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { QRPreview } from "@/components/qr/QRPreview";
 import { ProviderModeBadge } from "@/components/qr/ProviderModeBadge";
+import { EditQRDialog } from "@/components/qr/EditQRDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils/format-currency";
-import { updateQRStatusAction } from "@/lib/actions/qr-actions";
+import {
+  deactivateQRAction,
+  reactivateQRAction,
+} from "@/lib/actions/qr-actions";
 import type { QRCode, TransactionWithRelations } from "@/types";
 
 interface QRStats {
@@ -40,7 +44,9 @@ export function QRDetailPageContent({
   transactions,
 }: QRDetailPageContentProps) {
   const router = useRouter();
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [reactivateOpen, setReactivateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const txnColumns: Column<TransactionWithRelations>[] = [
     {
@@ -76,26 +82,30 @@ export function QRDetailPageContent({
         title={qr.qrName}
         description={`QR ID: ${qr.id}`}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ProviderModeBadge mode={qr.providerMode} isPayable={qr.isPayable} />
             <StatusBadge status={qr.status} />
-            <Button
-              variant="outline"
-              onClick={() =>
-                toast.info("Download started (Demo)", { description: qr.qrName })
-              }
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download QR
+            <Button variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => setConfirmOpen(true)}
-              disabled={qr.status === "inactive"}
-            >
-              <Power className="mr-2 h-4 w-4" />
-              Deactivate
+            <Button variant="outline" asChild>
+              <a href={`/api/qr/${qr.id}/download?format=png&size=512`} download>
+                <Download className="mr-2 h-4 w-4" />
+                Download QR
+              </a>
             </Button>
+            {qr.status === "active" ? (
+              <Button variant="destructive" onClick={() => setDeactivateOpen(true)}>
+                <Power className="mr-2 h-4 w-4" />
+                Deactivate
+              </Button>
+            ) : (
+              <Button onClick={() => setReactivateOpen(true)}>
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Reactivate
+              </Button>
+            )}
             <Button variant="outline" asChild>
               <Link href={`/transactions?qr=${qr.id}`}>
                 <ArrowLeftRight className="mr-2 h-4 w-4" />
@@ -142,21 +152,25 @@ export function QRDetailPageContent({
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Merchant</p>
-              <Link href={`/merchants/${qr.merchantId}`} className="text-sm font-medium text-primary hover:underline">
+              <Link
+                href={`/merchants/${qr.merchantId}`}
+                className="text-sm font-medium text-primary hover:underline"
+              >
                 {qr.merchantName}
               </Link>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Bank / Patsanstha</p>
-              <Link href={`/clients/${qr.clientId}`} className="text-sm font-medium text-primary hover:underline">
+              <Link
+                href={`/clients/${qr.clientId}`}
+                className="text-sm font-medium text-primary hover:underline"
+              >
                 {qr.clientName}
               </Link>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Provider Reference</p>
-              <p className="font-mono text-sm font-medium">
-                {qr.sabpaisaQrId ?? "—"}
-              </p>
+              <p className="font-mono text-sm font-medium">{qr.sabpaisaQrId ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Integration Mode</p>
@@ -169,6 +183,14 @@ export function QRDetailPageContent({
             <div>
               <p className="text-xs text-muted-foreground">Created Date</p>
               <DateDisplay date={qr.createdAt} />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Total Transactions</p>
+              <p className="text-sm font-medium">{stats.total}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Total Amount</p>
+              <CurrencyDisplay amount={stats.collection} />
             </div>
             {qr.maxAmountPerTransaction && (
               <div>
@@ -228,21 +250,41 @@ export function QRDetailPageContent({
         </CardContent>
       </Card>
 
+      <EditQRDialog qr={qr} open={editOpen} onOpenChange={setEditOpen} />
+
       <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Deactivate QR Code"
+        open={deactivateOpen}
+        onOpenChange={setDeactivateOpen}
+        title="Deactivate this QR?"
         description={`Are you sure you want to deactivate "${qr.qrName}"?`}
         confirmLabel="Deactivate"
         destructive
         onConfirm={async () => {
-          const result = await updateQRStatusAction(qr.id, "inactive");
+          const result = await deactivateQRAction(qr.id);
           if (!result.success) {
             toast.error(result.error);
             return;
           }
           toast.success("QR code deactivated");
-          setConfirmOpen(false);
+          setDeactivateOpen(false);
+          router.refresh();
+        }}
+      />
+
+      <ConfirmDialog
+        open={reactivateOpen}
+        onOpenChange={setReactivateOpen}
+        title="Reactivate this QR?"
+        description={`Reactivate "${qr.qrName}" without creating a duplicate QR record.`}
+        confirmLabel="Reactivate"
+        onConfirm={async () => {
+          const result = await reactivateQRAction(qr.id);
+          if (!result.success) {
+            toast.error(result.error);
+            return;
+          }
+          toast.success("QR code reactivated");
+          setReactivateOpen(false);
           router.refresh();
         }}
       />
