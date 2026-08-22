@@ -1,4 +1,5 @@
 import type { ReportsQuery } from "@/lib/validations/reports";
+import type { MonitoringQuery } from "@/lib/validations/monitoring";
 
 export type ClientType = "bank" | "patsanstha";
 
@@ -306,4 +307,98 @@ export interface ChartDataPoint {
   label: string;
   amount: number;
   count: number;
+}
+
+export type PendingAgeBucket = "recent" | "aging" | "older";
+
+export interface MonitoringSummary {
+  activeQrCodes: number;
+  inactiveQrCodes: number;
+  mockQrCodes: number;
+  pendingTransactions: number;
+  failedTransactions: number;
+  successfulTransactions: number;
+  receivedPaymentEvents: number;
+  processedPaymentEvents: number;
+  rejectedPaymentEvents: number;
+  failedPaymentEvents: number;
+  duplicatePaymentEvents: number;
+}
+
+export interface PendingTransactionRow {
+  id: string;
+  transactionId: string;
+  merchantName: string;
+  merchantId: string;
+  qrName: string;
+  qrId: string;
+  amount: number;
+  providerMode: "mock" | "legacy" | "live";
+  initiatedAt: string;
+  ageMinutes: number;
+  ageBucket: PendingAgeBucket;
+}
+
+export interface FailedTransactionRow {
+  id: string;
+  transactionId: string;
+  merchantName: string;
+  merchantId: string;
+  qrName: string;
+  qrId: string;
+  amount: number;
+  providerMode: "mock" | "legacy" | "live";
+  initiatedAt: string;
+  referenceNumber?: string;
+}
+
+export interface PaymentEventRow {
+  id: string;
+  provider: string;
+  providerMode: "mock" | "legacy" | "live";
+  processingStatus: string;
+  receivedAt: string;
+  processedAt?: string;
+  failureReasonCode?: string;
+  transactionId?: string;
+}
+
+export interface QrOperationalRow {
+  id: string;
+  qrName: string;
+  qrIdentifier: string;
+  merchantName: string;
+  providerMode: "mock" | "legacy" | "live";
+  status: "active" | "inactive" | "pending";
+  isPayable: boolean;
+  recentTransactionCount: number;
+}
+
+export interface AuditActivityRow {
+  id: string;
+  action: string;
+  actorName?: string;
+  entityType: string;
+  entityId?: string;
+  createdAt: string;
+}
+
+export interface IntegrationReadiness {
+  integrationMode: string;
+  liveQrProvider: string;
+  liveTransactionProvider: string;
+  publicWebhook: string;
+  apiCryptoInteroperability: string;
+  webhookInteroperability: string;
+}
+
+export interface MonitoringData {
+  summary: MonitoringSummary;
+  pendingTransactions: PendingTransactionRow[];
+  failedTransactions: FailedTransactionRow[];
+  recentPaymentEvents: PaymentEventRow[];
+  qrOverview: QrOperationalRow[];
+  recentAuditActivity: AuditActivityRow[];
+  integrationReadiness: IntegrationReadiness;
+  query: MonitoringQuery;
 }

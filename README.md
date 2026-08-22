@@ -474,6 +474,34 @@ npm run test:phase6-part2   # Reports + tenant isolation + CSV + financial safet
 
 **Not implemented in Part 2:** settlement reports, refunds, live reconciliation, operational alerting, production SabPaisa activation.
 
+## Phase 6 Part 3 — Operational Monitoring (COMPLETE)
+
+Read-only operational monitoring from existing Neon data:
+
+```text
+Neon → QR / Transaction / PaymentEvent / Audit → Monitoring Service → RBAC + Tenant Scope → Monitoring UI
+```
+
+### Covered in Phase 6 Part 3
+
+- Server-only `monitoring-service.ts` with Prisma `count` / `aggregate` / `groupBy`
+- Operational summary: QR status, transaction counts, payment event processing counts
+- Pending transaction list with age buckets (Recent / Aging / Older) — operational only, no status mutation
+- Failed transaction list, recent payment events, QR operational overview
+- Tenant-scoped recent audit activity (safe fields only)
+- Integration readiness panel (MOCK mode, live providers disabled, blockers preserved)
+- `/monitoring` route with role-based server authorization
+
+**Monitoring does not mutate payment state.** Payment success does not imply settlement. MOCK operational data is TEST data.
+
+### Phase 6 Part 3 test suite
+
+```bash
+npm run test:phase6-part3   # Monitoring + tenant isolation + read-only safety
+```
+
+**Not implemented in Part 3:** settlement, refunds, live provider health, automatic reconciliation, production SabPaisa activation.
+
 ## Installation
 
 ```bash
@@ -580,6 +608,7 @@ npm run test:phase5-part3         # Phase 5 Part 3 transaction management
 npm run test:phase5-final         # Phase 5 end-to-end MOCK integration + security
 npm run test:phase6-part1         # Phase 6 Part 1 dashboard metrics + security
 npm run test:phase6-part2         # Phase 6 Part 2 reports + analytics + security
+npm run test:phase6-part3         # Phase 6 Part 3 operational monitoring + security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -646,6 +675,7 @@ scripts/
   verify-phase5-final.ts
   verify-phase6-part1.ts
   verify-phase6-part2.ts
+  verify-phase6-part3.ts
 docs/
   SABPAISA_LIVE_READINESS.md
   PHASE5_STATUS.md
@@ -672,4 +702,5 @@ docs/
 | **Phase 5** | TEST/MOCK transaction + event + management integration | Complete |
 | **Phase 6 Part 1** | Tenant-scoped Neon dashboard metrics | Complete |
 | **Phase 6 Part 2** | Tenant-safe reports and analytics | Complete |
-| **Phase 6 Part 3+** | Operational alerting, UAT, production deployment | Not started |
+| **Phase 6 Part 3** | Tenant-safe operational monitoring | Complete |
+| **Phase 6 Part 4+** | UAT, production deployment | Not started |

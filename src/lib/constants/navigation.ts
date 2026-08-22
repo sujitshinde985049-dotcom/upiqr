@@ -5,6 +5,7 @@ import {
   QrCode,
   ArrowLeftRight,
   BarChart3,
+  Activity,
   Users,
   Settings,
 } from "lucide-react";
@@ -30,6 +31,13 @@ function canAccessNavItem(role: UserRole, href: string): boolean {
       return role !== "MERCHANT_USER";
     case "/reports":
       return true;
+    case "/monitoring":
+      return (
+        role === "SUPER_ADMIN" ||
+        role === "CLIENT_ADMIN" ||
+        role === "CLIENT_OPERATOR" ||
+        role === "MERCHANT_USER"
+      );
     case "/users":
       return role === "SUPER_ADMIN" || role === "CLIENT_ADMIN";
     case "/settings":
@@ -74,6 +82,11 @@ export const mainNavItems: NavItem[] = [
     title: "Reports",
     href: "/reports",
     icon: BarChart3,
+  },
+  {
+    title: "Monitoring",
+    href: "/monitoring",
+    icon: Activity,
   },
   {
     title: "Users & Roles",

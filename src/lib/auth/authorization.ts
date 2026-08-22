@@ -124,6 +124,10 @@ export function canAccessReports(user: SessionUser): boolean {
   return true;
 }
 
+export function canAccessMonitoring(user: SessionUser): boolean {
+  return canReadTransactions(user);
+}
+
 export function canAccessUsersPage(user: SessionUser): boolean {
   return user.role === "SUPER_ADMIN" || user.role === "CLIENT_ADMIN";
 }
