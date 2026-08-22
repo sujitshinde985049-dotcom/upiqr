@@ -539,6 +539,29 @@ npm run test:phase6-part1    # Dashboard metrics
 
 **MOCK data is TEST data.** LEGACY data is not LIVE collection data. Payment success does not imply settlement. Monitoring is read-only. Live SabPaisa remains disabled pending official onboarding/interoperability details.
 
+## Phase 7 Part 1 — Persistent Settings
+
+Application settings are now **Neon-backed** and enforced server-side. Settings are **not a secret store** — SabPaisa credentials remain server-side environment configuration.
+
+```text
+Settings UI → Server Actions → Zod Validation → RBAC + Tenant Scope → Settings Service → Prisma / Neon → Audit Log
+```
+
+### Covered in Phase 7 Part 1
+
+- Typed `PlatformSettings` singleton (Super Admin): platform name, support email, optional support phone
+- Typed `ClientSettings` per tenant (Super Admin + Client Admin): notification preferences
+- Server-only `settings-service.ts` with safe defaults and upsert behavior
+- Server actions with audit logging (`PLATFORM_SETTINGS_UPDATED`, `CLIENT_SETTINGS_UPDATED`)
+- Read-only SabPaisa integration readiness panel (no credential fields, no live switch)
+- Secret-key rejection in validation (API keys, encryption keys, connection strings, etc.)
+
+```bash
+npm run test:phase7-part1   # Settings persistence + RBAC + secret separation
+```
+
+**Application settings are not a secret store.** SabPaisa credentials remain in `.env` / server environment only.
+
 ## Installation
 
 ```bash
@@ -647,6 +670,7 @@ npm run test:phase6-part1         # Phase 6 Part 1 dashboard metrics + security
 npm run test:phase6-part2         # Phase 6 Part 2 reports + analytics + security
 npm run test:phase6-part3         # Phase 6 Part 3 operational monitoring + security
 npm run test:phase6-final         # Phase 6 end-to-end integration + security
+npm run test:phase7-part1         # Phase 7 Part 1 persistent settings + security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -715,6 +739,7 @@ scripts/
   verify-phase6-part2.ts
   verify-phase6-part3.ts
   verify-phase6-final.ts
+  verify-phase7-part1.ts
 docs/
   SABPAISA_LIVE_READINESS.md
   PHASE5_STATUS.md
@@ -740,4 +765,5 @@ docs/
 | **Phase 4** | SabPaisa TEST/MOCK integration + live-readiness | Complete |
 | **Phase 5** | TEST/MOCK transaction + event + management integration | Complete |
 | **Phase 6** | Dashboard, reports, and operational monitoring | Complete |
-| **Phase 7+** | UAT, production deployment | Not started |
+| **Phase 7 Part 1** | Persistent tenant-safe settings | Complete |
+| **Phase 7 Part 2+** | Notifications, UAT, production deployment | Not started |

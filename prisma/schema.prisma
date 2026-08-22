@@ -95,6 +95,7 @@ model Client {
   qrCodes      QRCode[]
   transactions Transaction[]
   auditLogs    AuditLog[]
+  settings     ClientSettings?
 
   @@index([status])
   @@index([type])
@@ -232,6 +233,29 @@ model PaymentEvent {
   @@index([transactionId])
   @@index([processingStatus])
   @@index([receivedAt])
+}
+
+model PlatformSettings {
+  id           String   @id @default("platform")
+  platformName String   @default("MahaCred QR")
+  supportEmail String   @default("support@mahacred.in")
+  supportPhone String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ClientSettings {
+  id                 String   @id @default(cuid())
+  clientId           String   @unique
+  emailNotifications Boolean  @default(true)
+  transactionAlerts  Boolean  @default(true)
+  weeklyReports      Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
 }
 
 model AuditLog {

@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Settings,
-  Shield,
-  Bell,
   Plug,
-  CheckCircle2,
-  XCircle,
-  Clock,
+  Bell,
+  Building2,
 } from "lucide-react";
+import type { UserRole } from "@prisma/client";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,250 +19,237 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  updateClientSettingsAction,
+  updatePlatformSettingsAction,
+} from "@/lib/actions/settings-actions";
+import type {
+  ClientSettingsView,
+  PlatformSettingsView,
+} from "@/lib/services/settings-service";
+import type { IntegrationReadiness } from "@/types";
 
-function StatusIndicator({
-  status,
-  label,
-}: {
-  status: "configured" | "not_configured" | "pending";
-  label: string;
-}) {
-  const config = {
-    configured: {
-      icon: CheckCircle2,
-      color: "text-emerald-600",
-      badge: "Configured",
-      variant: "default" as const,
-    },
-    not_configured: {
-      icon: XCircle,
-      color: "text-muted-foreground",
-      badge: "Not Configured",
-      variant: "secondary" as const,
-    },
-    pending: {
-      icon: Clock,
-      color: "text-amber-600",
-      badge: "Pending",
-      variant: "outline" as const,
-    },
-  }[status];
-
-  const Icon = config.icon;
-
-  return (
-    <div className="flex items-center justify-between rounded-lg border p-4">
-      <div className="flex items-center gap-3">
-        <Icon className={`h-5 w-5 ${config.color}`} />
-        <span className="text-sm font-medium">{label}</span>
-      </div>
-      <Badge variant={config.variant}>{config.badge}</Badge>
-    </div>
-  );
+interface SettingsPageContentProps {
+  userRole: UserRole;
+  platformSettings: PlatformSettingsView | null;
+  clientSettings: ClientSettingsView | null;
+  clients: { id: string; name: string }[];
+  selectedClientId: string | null;
+  integrationReadiness: IntegrationReadiness;
+  canEditPlatform: boolean;
+  canEditClient: boolean;
 }
 
-export function SettingsPageContent() {
-  const [platformName, setPlatformName] = useState("MahaCred QR");
-  const [supportEmail, setSupportEmail] = useState("support@mahacred.in");
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [transactionAlerts, setTransactionAlerts] = useState(true);
-  const [weeklyReports, setWeeklyReports] = useState(false);
+export function SettingsPageContent({
+  userRole,
+  platformSettings,
+  clientSettings,
+  clients,
+  selectedClientId,
+  integrationReadiness,
+  canEditPlatform,
+  canEditClient,
+}: SettingsPageContentProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
-  const handleSave = (section: string) => {
-    toast.success(`${section} saved`, {
-      description: "Platform preferences are not persisted yet in Phase 2.",
+  const [platformName, setPlatformName] = useState(
+    platformSettings?.platformName ?? "MahaCred QR"
+  );
+  const [supportEmail, setSupportEmail] = useState(
+    platformSettings?.supportEmail ?? "support@mahacred.in"
+  );
+  const [supportPhone, setSupportPhone] = useState(
+    platformSettings?.supportPhone ?? ""
+  );
+
+  const [emailNotifications, setEmailNotifications] = useState(
+    clientSettings?.emailNotifications ?? true
+  );
+  const [transactionAlerts, setTransactionAlerts] = useState(
+    clientSettings?.transactionAlerts ?? true
+  );
+  const [weeklyReports, setWeeklyReports] = useState(
+    clientSettings?.weeklyReports ?? false
+  );
+
+  const handleClientChange = (clientId: string | null) => {
+    if (!clientId) return;
+    startTransition(() => {
+      router.push(`/settings?clientId=${encodeURIComponent(clientId)}`);
     });
   };
+
+  const handleSavePlatform = async () => {
+    const result = await updatePlatformSettingsAction({
+      platformName,
+      supportEmail,
+      supportPhone: supportPhone.trim() === "" ? undefined : supportPhone.trim(),
+    });
+
+    if (!result.success) {
+      toast.error("Unable to save platform settings", {
+        description: result.error,
+      });
+      return;
+    }
+
+    toast.success("Platform settings saved");
+    startTransition(() => router.refresh());
+  };
+
+  const handleSaveClient = async () => {
+    const result = await updateClientSettingsAction({
+      clientId: selectedClientId ?? undefined,
+      emailNotifications,
+      transactionAlerts,
+      weeklyReports,
+    });
+
+    if (!result.success) {
+      toast.error("Unable to save client settings", {
+        description: result.error,
+      });
+      return;
+    }
+
+    toast.success("Client settings saved");
+    startTransition(() => router.refresh());
+  };
+
+  const defaultTab = canEditPlatform ? "general" : "client";
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Settings"
-        description="Platform configuration and integration settings"
+        description="Neon-backed application configuration. Settings are not a secret store."
       />
 
-      <Tabs defaultValue="general">
+      <Tabs defaultValue={defaultTab}>
         <TabsList>
-          <TabsTrigger value="general" className="gap-2">
-            <Settings className="h-4 w-4" />
-            General
+          {canEditPlatform && (
+            <TabsTrigger value="general" className="gap-2">
+              <Settings className="h-4 w-4" />
+              General
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="client" className="gap-2">
+            <Building2 className="h-4 w-4" />
+            Client Preferences
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
-            <Shield className="h-4 w-4" />
-            Security
-          </TabsTrigger>
-          <TabsTrigger value="sabpaisa" className="gap-2">
+          <TabsTrigger value="integration" className="gap-2">
             <Plug className="h-4 w-4" />
-            SabPaisa Integration
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2">
-            <Bell className="h-4 w-4" />
-            Notifications
+            Integration Readiness
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">General Settings</CardTitle>
-              <CardDescription>
-                Basic platform configuration for MahaCred QR
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
+        {canEditPlatform && (
+          <TabsContent value="general" className="mt-6 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Platform Settings</CardTitle>
+                <CardDescription>
+                  Super Admin platform configuration persisted in Neon
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="platformName">Platform Name</Label>
+                    <Input
+                      id="platformName"
+                      value={platformName}
+                      onChange={(e) => setPlatformName(e.target.value)}
+                      disabled={!canEditPlatform || isPending}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="supportEmail">Support Email</Label>
+                    <Input
+                      id="supportEmail"
+                      type="email"
+                      value={supportEmail}
+                      onChange={(e) => setSupportEmail(e.target.value)}
+                      disabled={!canEditPlatform || isPending}
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="platformName">Platform Name</Label>
+                  <Label htmlFor="supportPhone">Support Phone (optional)</Label>
                   <Input
-                    id="platformName"
-                    value={platformName}
-                    onChange={(e) => setPlatformName(e.target.value)}
+                    id="supportPhone"
+                    value={supportPhone}
+                    onChange={(e) => setSupportPhone(e.target.value)}
+                    placeholder="10-digit Indian mobile"
+                    disabled={!canEditPlatform || isPending}
                   />
                 </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Default Currency</Label>
+                    <Input value="INR (₹)" disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Timezone</Label>
+                    <Input value="Asia/Kolkata (IST)" disabled />
+                  </div>
+                </div>
+                <Button
+                  onClick={handleSavePlatform}
+                  disabled={!canEditPlatform || isPending}
+                >
+                  {isPending ? "Saving..." : "Save Platform Settings"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
+        <TabsContent value="client" className="mt-6 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Client Preferences</CardTitle>
+              <CardDescription>
+                Tenant-scoped notification preferences stored in Neon
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {canEditPlatform && clients.length > 0 && (
                 <div className="space-y-2">
-                  <Label htmlFor="supportEmail">Support Email</Label>
-                  <Input
-                    id="supportEmail"
-                    type="email"
-                    value={supportEmail}
-                    onChange={(e) => setSupportEmail(e.target.value)}
-                  />
+                  <Label>Bank / Patsanstha</Label>
+                  <Select
+                    value={selectedClientId ?? undefined}
+                    onValueChange={handleClientChange}
+                    disabled={isPending}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Default Currency</Label>
-                <Input value="INR (₹)" disabled />
-              </div>
-              <div className="space-y-2">
-                <Label>Timezone</Label>
-                <Input value="Asia/Kolkata (IST)" disabled />
-              </div>
-              <Button onClick={() => handleSave("General settings")}>
-                Save Changes
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              )}
 
-        <TabsContent value="security" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Security Settings</CardTitle>
-              <CardDescription>
-                Authentication and access control (Phase 2)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <StatusIndicator status="configured" label="PostgreSQL Database" />
-                <StatusIndicator status="configured" label="Authentication (Auth.js)" />
-                <StatusIndicator status="configured" label="Password Hashing (bcrypt)" />
-                <StatusIndicator status="configured" label="RBAC & Tenant Isolation" />
-                <StatusIndicator status="configured" label="Audit Logging Foundation" />
-                <StatusIndicator status="not_configured" label="Two-Factor Authentication" />
-              </div>
-              <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                Phase 2 provides database-backed authentication with JWT sessions,
-                role-based access control, and server-side tenant isolation. Passwords
-                are hashed with bcrypt and never stored in plaintext.
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Two-Factor Authentication</p>
-                    <p className="text-xs text-muted-foreground">
-                      Require 2FA for admin users
-                    </p>
-                  </div>
-                  <Switch disabled />
+              {!canEditPlatform && userRole === "CLIENT_ADMIN" && (
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+                  Managing preferences for your authorized client tenant only.
                 </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Session Timeout</p>
-                    <p className="text-xs text-muted-foreground">
-                      Auto logout after inactivity
-                    </p>
-                  </div>
-                  <Input className="w-24" value="30 min" disabled />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Password Policy</p>
-                    <p className="text-xs text-muted-foreground">
-                      Minimum length and complexity rules
-                    </p>
-                  </div>
-                  <Badge variant="outline">Phase 2</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              )}
 
-        <TabsContent value="sabpaisa" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">SabPaisa Integration</CardTitle>
-              <CardDescription>
-                Payment gateway configuration status
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-lg bg-muted/50 p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Environment</span>
-                  <Badge variant="outline">Not Connected</Badge>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Sandbox / Production selection will be available in Phase 4
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <StatusIndicator
-                  status="not_configured"
-                  label="API Configuration Status"
-                />
-                <StatusIndicator
-                  status="not_configured"
-                  label="Encryption Configuration Status"
-                />
-                <StatusIndicator status="not_configured" label="Connection Status" />
-              </div>
-
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                  SabPaisa credentials will be configured securely on the server
-                  during Phase 4.
-                </p>
-                <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
-                  API keys, encryption master keys, and HMAC secrets are never
-                  stored in frontend code. All SabPaisa communication will flow
-                  through the MahaCred backend.
-                </p>
-              </div>
-
-              <div className="text-xs text-muted-foreground">
-                <p className="font-medium">Architecture:</p>
-                <p className="mt-1 font-mono">
-                  Browser → MahaCred Backend → SabPaisa
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="mt-6 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Notification Preferences</CardTitle>
-              <CardDescription>
-                Configure email and alert notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -275,6 +261,7 @@ export function SettingsPageContent() {
                   <Switch
                     checked={emailNotifications}
                     onCheckedChange={setEmailNotifications}
+                    disabled={!canEditClient || isPending}
                   />
                 </div>
                 <Separator />
@@ -288,6 +275,7 @@ export function SettingsPageContent() {
                   <Switch
                     checked={transactionAlerts}
                     onCheckedChange={setTransactionAlerts}
+                    disabled={!canEditClient || isPending}
                   />
                 </div>
                 <Separator />
@@ -295,22 +283,94 @@ export function SettingsPageContent() {
                   <div>
                     <p className="text-sm font-medium">Weekly Reports</p>
                     <p className="text-xs text-muted-foreground">
-                      Receive weekly collection summary reports
+                      Receive weekly operational summary reports
                     </p>
                   </div>
                   <Switch
                     checked={weeklyReports}
                     onCheckedChange={setWeeklyReports}
+                    disabled={!canEditClient || isPending}
                   />
                 </div>
               </div>
-              <Button onClick={() => handleSave("Notification preferences")}>
-                Save Preferences
+
+              <Button
+                onClick={handleSaveClient}
+                disabled={!canEditClient || isPending || !selectedClientId}
+              >
+                {isPending ? "Saving..." : "Save Client Preferences"}
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="integration" className="mt-6 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">SabPaisa Integration Readiness</CardTitle>
+              <CardDescription>
+                Read-only integration state. Credentials remain server-side environment configuration.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ReadinessRow
+                  label="Integration Mode"
+                  value={integrationReadiness.integrationMode}
+                />
+                <ReadinessRow
+                  label="Live QR Provider"
+                  value={integrationReadiness.liveQrProvider}
+                />
+                <ReadinessRow
+                  label="Live Transaction Provider"
+                  value={integrationReadiness.liveTransactionProvider}
+                />
+                <ReadinessRow
+                  label="Public Webhook"
+                  value={integrationReadiness.publicWebhook}
+                />
+                <ReadinessRow
+                  label="API Crypto Interoperability"
+                  value={integrationReadiness.apiCryptoInteroperability}
+                />
+                <ReadinessRow
+                  label="Webhook Interoperability"
+                  value={integrationReadiness.webhookInteroperability}
+                />
+              </div>
+
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  SabPaisa credentials are never stored in application settings.
+                </p>
+                <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+                  API keys, encryption master keys, and HMAC secrets remain in server environment
+                  configuration only. Live activation is a controlled future onboarding task.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function ReadinessRow({ label, value }: { label: string; value: string }) {
+  const variant =
+    value.toLowerCase().includes("blocked") ||
+    value.toLowerCase().includes("disabled") ||
+    value.toLowerCase().includes("not enabled")
+      ? "secondary"
+      : value.toLowerCase().includes("mock")
+        ? "outline"
+        : "default";
+
+  return (
+    <div className="flex items-center justify-between rounded-lg border p-4">
+      <span className="text-sm font-medium">{label}</span>
+      <Badge variant={variant}>{value}</Badge>
     </div>
   );
 }
