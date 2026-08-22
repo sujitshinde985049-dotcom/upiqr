@@ -30,7 +30,7 @@ export default async function ReportsPage() {
     clients,
     merchants,
   ] = await Promise.all([
-    getChartDataForUser(user, "30days"),
+    getChartDataForUser(user, { dateWindow: "30days", providerMode: "all" }),
     getClientsWithStats(user),
     getMerchantsWithStats(user),
     getQRCodesWithStats(user),

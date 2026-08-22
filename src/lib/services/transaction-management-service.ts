@@ -99,7 +99,7 @@ async function authorizeManagementFilters(
   }
 }
 
-async function buildManagedTransactionWhere(
+export async function buildManagedTransactionWhere(
   user: SessionUser,
   query: TransactionManagementFilters
 ): Promise<Prisma.TransactionWhereInput> {
@@ -163,7 +163,7 @@ function buildOrderBy(
   }
 }
 
-async function computeSummaryMetrics(
+export async function computeSummaryMetrics(
   where: Prisma.TransactionWhereInput
 ): Promise<TransactionSummaryMetrics> {
   const [statusGroups, successByMode] = await Promise.all([

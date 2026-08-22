@@ -187,6 +187,61 @@ export interface DashboardKPIs {
   totalCollection: number;
 }
 
+export interface QrOverview {
+  total: number;
+  active: number;
+  inactive: number;
+  mock: number;
+}
+
+export interface MerchantOverview {
+  total: number;
+  active: number;
+  pending: number;
+  inactive: number;
+}
+
+export interface DashboardMetrics {
+  showPlatformClients: boolean;
+  totalClients: number;
+  totalMerchants: number;
+  activeMerchants: number;
+  pendingMerchants: number;
+  inactiveMerchants: number;
+  totalQrCodes: number;
+  activeQrCodes: number;
+  inactiveQrCodes: number;
+  mockQrCodes: number;
+  totalTransactions: number;
+  successfulTransactions: number;
+  pendingTransactions: number;
+  failedTransactions: number;
+  successfulAmount: number;
+  successfulAmountByProviderMode: {
+    mock: number;
+    legacy: number;
+    live: number;
+  };
+  dateWindow: "today" | "7days" | "30days";
+  providerMode: "all" | "mock" | "legacy" | "live";
+}
+
+export interface DashboardData {
+  metrics: DashboardMetrics;
+  chartData: ChartDataPoint[];
+  recentTransactions: TransactionWithRelations[];
+  topClients: ClientWithStats[];
+  recentMerchants: MerchantWithStats[];
+  qrOverview: QrOverview;
+  merchantOverview: MerchantOverview | null;
+  query: {
+    dateWindow: "today" | "7days" | "30days";
+    providerMode: "all" | "mock" | "legacy" | "live";
+    clientId?: string;
+    merchantId?: string;
+  };
+}
+
 export interface ChartDataPoint {
   date: string;
   label: string;

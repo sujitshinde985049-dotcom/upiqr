@@ -28,7 +28,8 @@
     "test:phase5-part1": "tsx scripts/verify-phase5-part1.ts",
     "test:phase5-part2": "tsx scripts/verify-phase5-part2.ts",
     "test:phase5-part3": "tsx scripts/verify-phase5-part3.ts",
-    "test:phase5-final": "tsx scripts/verify-phase5-final.ts"
+    "test:phase5-final": "tsx scripts/verify-phase5-final.ts",
+    "test:phase6-part1": "tsx scripts/verify-phase6-part1.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

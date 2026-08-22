@@ -411,7 +411,38 @@ npm run test:phase5-final   # End-to-end MOCK integration + security
 
 See `docs/PHASE5_STATUS.md` for capability matrix and `docs/SABPAISA_LIVE_READINESS.md` for LIVE activation requirements.
 
-**Not implemented:** live payment ingestion, real webhook, settlement, live reconciliation, refunds, Phase 6.
+**Not implemented:** live payment ingestion, real webhook, settlement, live reconciliation, refunds.
+
+## Phase 6 Part 1 — Real Dashboard Metrics (COMPLETE)
+
+The dashboard is now a **Neon-backed operational dashboard** with tenant-scoped RBAC:
+
+```text
+Neon PostgreSQL → Dashboard Service → RBAC + Tenant Scope → Dashboard Metrics
+  → Recent Transactions → QR / Merchant operational overview → Role-specific UI
+```
+
+### Covered in Phase 6 Part 1
+
+- Server-only `dashboard-service.ts` with Prisma `count` / `aggregate` / `groupBy` (no browser-side financial math)
+- Role-specific metrics: `SUPER_ADMIN`, `CLIENT_ADMIN`, `CLIENT_OPERATOR`, `MERCHANT_USER`
+- Transaction status breakdown (success / pending / failed)
+- **Successful Amount** = successful transaction amount only (`status = success`); **not settlement**
+- MOCK / LEGACY / LIVE separation with explicit TEST and LEGACY labels
+- Date windows: Today, Last 7 Days, Last 30 Days (server-validated)
+- Recent authorized transactions (limited, newest first, links to `/transactions/[id]`)
+- QR and merchant operational overviews
+- Customer VPA not displayed on dashboard; masked when present in service payloads
+
+**MOCK and LEGACY amounts are not LIVE collections.** Payment success does not imply settlement.
+
+### Phase 6 Part 1 test suite
+
+```bash
+npm run test:phase6-part1   # Dashboard metrics + tenant isolation + financial safety
+```
+
+**Not implemented in Part 1:** advanced reports/analytics (Part 2), settlement reporting, live reconciliation, refunds, production SabPaisa activation.
 
 ## Installation
 
@@ -517,6 +548,7 @@ npm run test:phase5-part1         # Phase 5 Part 1 transaction foundation + secu
 npm run test:phase5-part2         # Phase 5 Part 2 payment event security
 npm run test:phase5-part3         # Phase 5 Part 3 transaction management
 npm run test:phase5-final         # Phase 5 end-to-end MOCK integration + security
+npm run test:phase6-part1         # Phase 6 Part 1 dashboard metrics + security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -581,6 +613,7 @@ scripts/
   verify-phase5-part2.ts
   verify-phase5-part3.ts
   verify-phase5-final.ts
+  verify-phase6-part1.ts
 docs/
   SABPAISA_LIVE_READINESS.md
   PHASE5_STATUS.md
@@ -605,4 +638,5 @@ docs/
 | **Phase 3** | Bank/Patsanstha + Merchant Onboarding + User Management | Complete |
 | **Phase 4** | SabPaisa TEST/MOCK integration + live-readiness | Complete |
 | **Phase 5** | TEST/MOCK transaction + event + management integration | Complete |
-| **Phase 6** | UAT + production deployment | Not started |
+| **Phase 6 Part 1** | Tenant-scoped Neon dashboard metrics | Complete |
+| **Phase 6 Part 2+** | Advanced reports, UAT, production deployment | Not started |

@@ -3,11 +3,10 @@ import {
   TransactionStatus,
   type Prisma,
 } from "@prisma/client";
-import { startOfDay, subDays, format } from "date-fns";
+import { startOfDay } from "date-fns";
 import { prisma } from "@/lib/db/prisma";
 import type { SessionUser } from "@/lib/auth/types";
 import {
-  canAccessClientsList,
   getClientRecordScopeFilter,
   getMerchantScopeFilter,
   requireClientAccess,
@@ -26,15 +25,28 @@ import {
   getTransactionsWithRelationsForUser,
 } from "@/lib/services/transaction-service";
 import type {
-  ChartDataPoint,
   ClientWithStats,
-  DashboardKPIs,
   MerchantWithStats,
   QRCodeWithStats,
   TransactionStatus as UiTransactionStatus,
   TransactionWithRelations,
   User,
 } from "@/types";
+import {
+  getChartDataForUser,
+  getDashboardKPIsForUser,
+  getRecentMerchantsForUser,
+  getRecentTransactionsForUser,
+  getTopPerformingClientsForUser,
+} from "@/lib/services/dashboard-service";
+
+export {
+  getChartDataForUser,
+  getDashboardKPIsForUser,
+  getRecentMerchantsForUser,
+  getRecentTransactionsForUser,
+  getTopPerformingClientsForUser,
+};
 
 function todayStart(): Date {
   return startOfDay(new Date());
@@ -332,147 +344,6 @@ export async function getTransactionsByQRIdForUser(
   user: SessionUser
 ) {
   return listQRTransactions(qrId, user);
-}
-
-export async function getDashboardKPIsForUser(
-  user: SessionUser
-): Promise<DashboardKPIs> {
-  const scope = getMerchantScopeFilter(user);
-
-  const [
-    totalClients,
-    totalMerchants,
-    activeQrCodes,
-    todayTransactions,
-    todayCollection,
-    totalCollection,
-  ] = await Promise.all([
-    canAccessClientsList(user)
-      ? prisma.client.count({ where: { status: EntityStatus.ACTIVE } })
-      : Promise.resolve(scope.clientId ? 1 : 0),
-    prisma.merchant.count({
-      where: { ...scope, status: EntityStatus.ACTIVE },
-    }),
-    prisma.qRCode.count({
-      where: { ...scope, status: EntityStatus.ACTIVE },
-    }),
-    prisma.transaction.count({
-      where: { ...scope, initiatedAt: { gte: todayStart() } },
-    }),
-    sumSuccessfulCollection({
-      ...scope,
-      initiatedAt: { gte: todayStart() },
-    }),
-    sumSuccessfulCollection(scope),
-  ]);
-
-  return {
-    totalClients,
-    totalMerchants,
-    activeQrCodes,
-    todayTransactions,
-    todayCollection,
-    totalCollection,
-  };
-}
-
-export async function getChartDataForUser(
-  user: SessionUser,
-  period: "today" | "7days" | "30days"
-): Promise<ChartDataPoint[]> {
-  const scope = getMerchantScopeFilter(user);
-  const days = period === "today" ? 1 : period === "7days" ? 7 : 30;
-  const data: ChartDataPoint[] = [];
-
-  for (let i = days - 1; i >= 0; i--) {
-    const date = subDays(new Date(), i);
-    const dateStr = format(date, "yyyy-MM-dd");
-    const dayStart = startOfDay(date);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-
-    const dayTxns = await prisma.transaction.findMany({
-      where: {
-        ...scope,
-        status: TransactionStatus.SUCCESS,
-        initiatedAt: { gte: dayStart, lt: dayEnd },
-      },
-    });
-
-    data.push({
-      date: dateStr,
-      label: period === "today" ? format(date, "hh a") : format(date, "dd MMM"),
-      amount: dayTxns.reduce((sum, t) => sum + decimalToNumber(t.amount), 0),
-      count: dayTxns.length,
-    });
-  }
-
-  return data;
-}
-
-export async function getTopPerformingClientsForUser(
-  user: SessionUser,
-  limit = 5
-) {
-  if (!canAccessClientsList(user)) {
-    if (!user.clientId) return [];
-    const stats = await getClientStatsForUser(user.clientId, user);
-    const client = await prisma.client.findUnique({ where: { id: user.clientId } });
-    if (!client) return [];
-    return [
-      {
-        ...mapClient(client),
-        totalMerchants: stats.totalMerchants,
-        activeQr: stats.activeQrs,
-        todayCollection: stats.todayCollection,
-        totalCollection: stats.totalCollection,
-      },
-    ];
-  }
-
-  const clients = await getClientsWithStats(user);
-  return clients
-    .filter((c) => c.status === "active")
-    .sort((a, b) => b.totalCollection - a.totalCollection)
-    .slice(0, limit);
-}
-
-export async function getRecentMerchantsForUser(user: SessionUser, limit = 5) {
-  const scope = getMerchantScopeFilter(user);
-  const merchants = await prisma.merchant.findMany({
-    where: scope,
-    include: { client: true },
-    orderBy: { createdAt: "desc" },
-    take: limit,
-  });
-
-  return Promise.all(
-    merchants.map(async (merchant) => {
-      const [qrCount, transactionCount, todayCollection, totalCollection] =
-        await Promise.all([
-        prisma.qRCode.count({ where: { merchantId: merchant.id } }),
-        prisma.transaction.count({ where: { merchantId: merchant.id } }),
-        sumSuccessfulCollection({
-          merchantId: merchant.id,
-          initiatedAt: { gte: todayStart() },
-        }),
-        sumSuccessfulCollection({ merchantId: merchant.id }),
-      ]);
-      return {
-        ...mapMerchant(merchant),
-        clientName: merchant.client.name,
-        qrCount,
-        transactionCount,
-        todayCollection,
-        totalCollection,
-      };
-    })
-  );
-}
-
-export async function getRecentTransactionsForUser(user: SessionUser, limit = 10) {
-  const txns = await getTransactionsWithRelations(user);
-  return txns.slice(0, limit);
 }
 
 export async function getUsersForUser(user: SessionUser): Promise<User[]> {
