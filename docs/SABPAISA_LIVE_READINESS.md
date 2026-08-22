@@ -112,11 +112,11 @@ MahaCred status: **BLOCKED — official SabPaisa webhook specification required*
 
 ## Not in scope for live QR activation
 
-- Transaction API live reads (`GET /api/v2/transactions`, `GET /api/v2/qr/:qr_id/transactions`) — mock/local only in Phase 5 Part 1
-- Live payment webhook adapter — **BLOCKED** (see webhook checklist above; internal MOCK processor exists in Phase 5 Part 2)
+- Transaction API live reads (`GET /api/v2/transactions`, `GET /api/v2/qr/:qr_id/transactions`) — mock/local only in Phase 5
+- Live payment webhook adapter — **BLOCKED** (see webhook checklist above; internal MOCK processor exists)
+- Settlement / live reconciliation / refunds — **NOT IMPLEMENTED**
 - QR analytics API
-- Webhooks / settlement / reconciliation (real SabPaisa webhook still BLOCKED)
 - Bulk QR
 - QR regenerate (`POST /api/v2/qr/:qr_id/regenerate` — documented as not yet implemented by SabPaisa)
 
-These belong to subsequent MahaCred phases.
+Phase 5 TEST/MOCK transaction integration is complete. See `docs/PHASE5_STATUS.md`.

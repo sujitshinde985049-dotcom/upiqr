@@ -377,8 +377,43 @@ Neon-backed transaction list and detail pages with tenant-safe RBAC, server-side
 npm run test:phase5-part3   # Transaction management security + filters + CSV
 ```
 
-**Not implemented in Part 3:** live SabPaisa reconciliation, settlement, refunds, live webhook, Phase 5 Part 4.
+**Not implemented in Part 3:** live SabPaisa reconciliation, settlement, refunds, live webhook.
 
+## Phase 5 — TEST/MOCK Transaction Integration (COMPLETE)
+
+Phase 5 delivers the full **TEST/MOCK** payment flow:
+
+```text
+SUPER_ADMIN → Client → Merchant → TEST QR
+  → MOCK Payment Event → Normalized Event
+  → Idempotent Processor → Neon Transaction
+  → Transaction Management → Client/Merchant/QR Views
+  → Summary Metrics → Authorized CSV Export
+```
+
+### Covered in Phase 5
+
+- Transaction foundation (MOCK provider, RBAC, SabPaisa read contracts)
+- Secure payment event processor (idempotency, state machine, amount/QR mismatch rejection)
+- Tenant-safe transaction list, detail, filters, metrics, CSV export
+- MOCK / LEGACY / LIVE financial separation
+- Payment success ≠ settlement (no settlement claims without settlement data)
+- Live providers and real webhook remain **fail-closed / BLOCKED**
+
+### Phase 5 test suites
+
+```bash
+npm run test:phase5-part1   # Transaction foundation
+npm run test:phase5-part2   # Payment event security
+npm run test:phase5-part3   # Transaction management
+npm run test:phase5-final   # End-to-end MOCK integration + security
+```
+
+See `docs/PHASE5_STATUS.md` for capability matrix and `docs/SABPAISA_LIVE_READINESS.md` for LIVE activation requirements.
+
+**Not implemented:** live payment ingestion, real webhook, settlement, live reconciliation, refunds, Phase 6.
+
+## Installation
 
 ```bash
 npm install
@@ -481,6 +516,7 @@ npm run test:transaction-provider-contract # Phase 5 Part 1 SabPaisa transaction
 npm run test:phase5-part1         # Phase 5 Part 1 transaction foundation + security
 npm run test:phase5-part2         # Phase 5 Part 2 payment event security
 npm run test:phase5-part3         # Phase 5 Part 3 transaction management
+npm run test:phase5-final         # Phase 5 end-to-end MOCK integration + security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -543,19 +579,21 @@ scripts/
   verify-transaction-provider-contract.ts
   verify-phase5-part1.ts
   verify-phase5-part2.ts
+  verify-phase5-part3.ts
+  verify-phase5-final.ts
 docs/
   SABPAISA_LIVE_READINESS.md
-```
+  PHASE5_STATUS.md
 
 ## Remaining Limitations (Post Phase 3)
 
 - **User edit** — create + activate/deactivate only; no name/email/role edit workflow
 - **Password reset** — temporary password at creation only; no self-service reset
 - **QR generation** — Part 2 mock workflow active; mock QRs are NOT payable; live SabPaisa requires onboarding
-- **Reports CSV export** — mock implementation
+- **Reports CSV export** — transactions CSV export is live via `/api/transactions/export`; reports page summary export remains mock
 - **Settings persistence** — general/notification settings not stored in database
 - **SabPaisa live QR** — mock mode only; see `docs/SABPAISA_LIVE_READINESS.md`; crypto interop BLOCKED
-- **Transactions** — Phase 5 Part 1 mock foundation; seeded LEGACY data preserved; not live payment sync
+- **Transactions** — Phase 5 MOCK/LEGACY foundation with tenant-safe management; not live payment sync
 - **Webhook / settlement / reconciliation** — internal MOCK event processor only; real SabPaisa webhook BLOCKED
 
 ## Future Roadmap
@@ -566,8 +604,5 @@ docs/
 | **Phase 2** | PostgreSQL + Prisma + Auth + RBAC + Tenant Isolation | Complete |
 | **Phase 3** | Bank/Patsanstha + Merchant Onboarding + User Management | Complete |
 | **Phase 4** | SabPaisa TEST/MOCK integration + live-readiness | Complete |
-| **Phase 5 Part 1** | Transaction foundation (mock provider, RBAC, contracts) | Complete |
-| **Phase 5 Part 2** | Secure payment event processor + MOCK event ingress | Complete |
-| **Phase 5 Part 3** | Tenant-safe transaction management + CSV export | Complete |
-| **Phase 5 Part 4+** | Live webhook, settlement, live reconciliation | Not started |
-| **Phase 6** | Testing + Security + UAT + Production Deployment | Not started |
+| **Phase 5** | TEST/MOCK transaction + event + management integration | Complete |
+| **Phase 6** | UAT + production deployment | Not started |
