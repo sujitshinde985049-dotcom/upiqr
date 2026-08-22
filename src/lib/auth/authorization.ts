@@ -121,7 +121,7 @@ export function canAccessClientsList(user: SessionUser): boolean {
 }
 
 export function canAccessReports(user: SessionUser): boolean {
-  return user.role !== "MERCHANT_USER";
+  return true;
 }
 
 export function canAccessUsersPage(user: SessionUser): boolean {

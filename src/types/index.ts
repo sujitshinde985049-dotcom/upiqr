@@ -1,3 +1,5 @@
+import type { ReportsQuery } from "@/lib/validations/reports";
+
 export type ClientType = "bank" | "patsanstha";
 
 export type EntityStatus = "active" | "inactive" | "pending";
@@ -240,6 +242,63 @@ export interface DashboardData {
     clientId?: string;
     merchantId?: string;
   };
+}
+
+export interface ReportsData {
+  summary: TransactionSummaryMetrics;
+  chartData: ChartDataPoint[];
+  providerModeBreakdown: ProviderModeBreakdownRow[];
+  merchantRows: MerchantReportRow[];
+  qrRows: QrReportRow[];
+  clientRows: ClientReportRow[];
+  transactions: ManagedTransactionListResult;
+  query: ReportsQuery;
+}
+
+export interface ProviderModeBreakdownRow {
+  providerMode: "mock" | "legacy" | "live";
+  total: number;
+  successful: number;
+  pending: number;
+  failed: number;
+  successfulAmount: number;
+}
+
+export interface MerchantReportRow {
+  id: string;
+  merchantId: string;
+  merchantName: string;
+  merchantCode: string;
+  clientName: string;
+  total: number;
+  successful: number;
+  pending: number;
+  failed: number;
+  successfulAmount: number;
+}
+
+export interface QrReportRow {
+  id: string;
+  qrId: string;
+  qrName: string;
+  qrIdentifier: string;
+  merchantName: string;
+  providerMode: "mock" | "legacy" | "live";
+  total: number;
+  successful: number;
+  successfulAmount: number;
+}
+
+export interface ClientReportRow {
+  id: string;
+  clientId: string;
+  clientName: string;
+  clientCode: string;
+  total: number;
+  successful: number;
+  pending: number;
+  failed: number;
+  successfulAmount: number;
 }
 
 export interface ChartDataPoint {

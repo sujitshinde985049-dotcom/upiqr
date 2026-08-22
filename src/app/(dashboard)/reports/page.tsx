@@ -1,53 +1,68 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import {
   canAccessReports,
   requireAuthenticatedUser,
 } from "@/lib/auth/authorization";
 import {
-  getChartDataForUser,
   getClientsForSelectors,
-  getClientsWithStats,
   getMerchantsForSelectors,
-  getMerchantsWithStats,
   getQRCodesWithStats,
-  getTransactionsWithRelations,
 } from "@/lib/services/data-service";
-import { ReportsPageContent } from "./reports-content";
+import { getReportsData } from "@/lib/services/report-service";
+import { reportsQuerySchema } from "@/lib/validations/reports";
+import {
+  ReportsPageContent,
+  ReportsPageFallback,
+} from "./reports-content";
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const user = await requireAuthenticatedUser();
 
   if (!canAccessReports(user)) {
     notFound();
   }
 
-  const [
-    chartData,
-    clientsWithStats,
-    merchantsWithStats,
-    qrCodesWithStats,
-    initialTransactions,
-    clients,
-    merchants,
-  ] = await Promise.all([
-    getChartDataForUser(user, { dateWindow: "30days", providerMode: "all" }),
-    getClientsWithStats(user),
-    getMerchantsWithStats(user),
-    getQRCodesWithStats(user),
-    getTransactionsWithRelations(user),
+  const rawParams = await searchParams;
+  const queryInput = {
+    page: rawParams.page,
+    limit: rawParams.limit,
+    search: typeof rawParams.search === "string" ? rawParams.search : undefined,
+    status: rawParams.status,
+    clientId: typeof rawParams.client === "string" ? rawParams.client : undefined,
+    merchantId:
+      typeof rawParams.merchant === "string" ? rawParams.merchant : undefined,
+    qrId: typeof rawParams.qr === "string" ? rawParams.qr : undefined,
+    providerMode: rawParams.providerMode,
+    dateWindow: rawParams.dateWindow,
+    fromDate: typeof rawParams.fromDate === "string" ? rawParams.fromDate : undefined,
+    toDate: typeof rawParams.toDate === "string" ? rawParams.toDate : undefined,
+    sortBy: rawParams.sortBy,
+    sortOrder: rawParams.sortOrder,
+  };
+
+  const query = reportsQuerySchema.parse(queryInput);
+
+  const [reports, clients, merchants, qrs] = await Promise.all([
+    getReportsData(user, query),
     getClientsForSelectors(user),
-    getMerchantsForSelectors(user),
+    getMerchantsForSelectors(user, query.clientId),
+    getQRCodesWithStats(user),
   ]);
 
   return (
-    <ReportsPageContent
-      chartData={chartData}
-      clientsWithStats={clientsWithStats}
-      merchantsWithStats={merchantsWithStats}
-      qrCodesWithStats={qrCodesWithStats}
-      initialTransactions={initialTransactions}
-      clients={clients}
-      merchants={merchants}
-    />
+    <Suspense fallback={<ReportsPageFallback />}>
+      <ReportsPageContent
+        user={user}
+        reports={reports}
+        clients={clients}
+        merchants={merchants}
+        qrs={qrs}
+      />
+    </Suspense>
   );
 }

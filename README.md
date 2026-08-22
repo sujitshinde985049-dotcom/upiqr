@@ -444,6 +444,36 @@ npm run test:phase6-part1   # Dashboard metrics + tenant isolation + financial s
 
 **Not implemented in Part 1:** advanced reports/analytics (Part 2), settlement reporting, live reconciliation, refunds, production SabPaisa activation.
 
+## Phase 6 Part 2 — Reports & Analytics (COMPLETE)
+
+Reports are now **Neon-backed**, tenant-scoped, and read-only:
+
+```text
+Neon Transaction Data → Report Service → RBAC + Tenant Scope → Validated Filters
+  → Summary Metrics → Trends / Breakdowns → Reports UI → Secure CSV Export
+```
+
+### Covered in Phase 6 Part 2
+
+- Server-only `report-service.ts` with Prisma `count` / `aggregate` / `groupBy`
+- Validated filters: date window (Today / 7 / 30 / Custom), client, merchant, QR, status, provider mode, search
+- Summary metrics: total / successful / pending / failed + **Successful Amount** (success only; not settlement)
+- Transaction trend chart, status breakdown, provider-mode breakdown (MOCK / LEGACY / LIVE)
+- Merchant and QR operational performance tables (tenant scoped)
+- Server-side paginated transaction table with links to `/transactions/[id]`
+- Secure CSV export via existing `/api/transactions/export` (tenant scope + formula injection protection)
+- `MERCHANT_USER` can access reports scoped to own merchant
+
+**MOCK and LEGACY amounts are not LIVE collections.** Payment success does not imply settlement.
+
+### Phase 6 Part 2 test suite
+
+```bash
+npm run test:phase6-part2   # Reports + tenant isolation + CSV + financial safety
+```
+
+**Not implemented in Part 2:** settlement reports, refunds, live reconciliation, operational alerting, production SabPaisa activation.
+
 ## Installation
 
 ```bash
@@ -549,6 +579,7 @@ npm run test:phase5-part2         # Phase 5 Part 2 payment event security
 npm run test:phase5-part3         # Phase 5 Part 3 transaction management
 npm run test:phase5-final         # Phase 5 end-to-end MOCK integration + security
 npm run test:phase6-part1         # Phase 6 Part 1 dashboard metrics + security
+npm run test:phase6-part2         # Phase 6 Part 2 reports + analytics + security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -614,6 +645,7 @@ scripts/
   verify-phase5-part3.ts
   verify-phase5-final.ts
   verify-phase6-part1.ts
+  verify-phase6-part2.ts
 docs/
   SABPAISA_LIVE_READINESS.md
   PHASE5_STATUS.md
@@ -639,4 +671,5 @@ docs/
 | **Phase 4** | SabPaisa TEST/MOCK integration + live-readiness | Complete |
 | **Phase 5** | TEST/MOCK transaction + event + management integration | Complete |
 | **Phase 6 Part 1** | Tenant-scoped Neon dashboard metrics | Complete |
-| **Phase 6 Part 2+** | Advanced reports, UAT, production deployment | Not started |
+| **Phase 6 Part 2** | Tenant-safe reports and analytics | Complete |
+| **Phase 6 Part 3+** | Operational alerting, UAT, production deployment | Not started |

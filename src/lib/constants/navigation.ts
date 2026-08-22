@@ -29,7 +29,7 @@ function canAccessNavItem(role: UserRole, href: string): boolean {
     case "/merchants":
       return role !== "MERCHANT_USER";
     case "/reports":
-      return role !== "MERCHANT_USER";
+      return true;
     case "/users":
       return role === "SUPER_ADMIN" || role === "CLIENT_ADMIN";
     case "/settings":
