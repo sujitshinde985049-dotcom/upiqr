@@ -53,7 +53,7 @@ export function TransactionChart({
               <Tooltip
                 formatter={(value) => [
                   formatCurrency(Number(value ?? 0)),
-                  "Collection",
+                  "Successful Amount",
                 ]}
                 labelStyle={{ fontWeight: 600 }}
               />

@@ -279,8 +279,16 @@ function verifyNavigationRbac() {
     !merchantNav.includes("/users") &&
       !merchantNav.includes("/settings") &&
       !merchantNav.includes("/merchants") &&
-      !merchantNav.includes("/reports"),
+      !merchantNav.includes("/clients"),
     `Nav items: ${merchantNav.join(", ")}`
+  );
+
+  record(
+    "Navigation: MERCHANT_USER sees operational surfaces",
+    merchantNav.includes("/reports") && merchantNav.includes("/monitoring"),
+    merchantNav.includes("/reports") && merchantNav.includes("/monitoring")
+      ? "Visible"
+      : "Missing expected operational nav"
   );
 
   record(
