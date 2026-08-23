@@ -136,6 +136,15 @@ export function canAccessSettings(user: SessionUser): boolean {
   return user.role === "SUPER_ADMIN" || user.role === "CLIENT_ADMIN";
 }
 
+export function canAccessNotifications(user: SessionUser): boolean {
+  return (
+    user.role === "SUPER_ADMIN" ||
+    user.role === "CLIENT_ADMIN" ||
+    user.role === "CLIENT_OPERATOR" ||
+    user.role === "MERCHANT_USER"
+  );
+}
+
 export function canCreateMerchant(user: SessionUser): boolean {
   return (
     user.role === "SUPER_ADMIN" ||

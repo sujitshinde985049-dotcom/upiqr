@@ -562,6 +562,27 @@ npm run test:phase7-part1   # Settings persistence + RBAC + secret separation
 
 **Application settings are not a secret store.** SabPaisa credentials remain in `.env` / server environment only.
 
+## Phase 7 Part 2 — In-App Operational Notifications
+
+Persisted Neon-backed operational notifications provide tenant/RBAC-scoped awareness. **Notifications do not determine payment status.** Marking a notification read does not resolve or alter a transaction. MOCK payment notifications represent TEST activity only. No external email/SMS/push delivery is implemented.
+
+```text
+Trusted Server Event → Notification Service → Neon Notification → Per-User Read State → Bell / Notification Center
+```
+
+### Covered in Phase 7 Part 2
+
+- Typed `Notification` + `NotificationRead` models with idempotent `sourceType/sourceId/type`
+- Server-only `notification-service.ts` with tenant-scoped queries and per-user read state
+- Payment notifications from trusted `processNormalizedPaymentEvent` path only
+- Lifecycle notifications for QR / Merchant / Client status changes
+- Notification bell in dashboard header + `/notifications` center
+- RBAC + tenant isolation on read/mark-read operations
+
+```bash
+npm run test:phase7-part2   # Operational notifications + RBAC + idempotency
+```
+
 ## Installation
 
 ```bash
@@ -671,6 +692,7 @@ npm run test:phase6-part2         # Phase 6 Part 2 reports + analytics + securit
 npm run test:phase6-part3         # Phase 6 Part 3 operational monitoring + security
 npm run test:phase6-final         # Phase 6 end-to-end integration + security
 npm run test:phase7-part1         # Phase 7 Part 1 persistent settings + security
+npm run test:phase7-part2         # Phase 7 Part 2 operational notifications + security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -740,6 +762,7 @@ scripts/
   verify-phase6-part3.ts
   verify-phase6-final.ts
   verify-phase7-part1.ts
+  verify-phase7-part2.ts
 docs/
   SABPAISA_LIVE_READINESS.md
   PHASE5_STATUS.md
@@ -766,4 +789,5 @@ docs/
 | **Phase 5** | TEST/MOCK transaction + event + management integration | Complete |
 | **Phase 6** | Dashboard, reports, and operational monitoring | Complete |
 | **Phase 7 Part 1** | Persistent tenant-safe settings | Complete |
-| **Phase 7 Part 2+** | Notifications, UAT, production deployment | Not started |
+| **Phase 7 Part 2** | In-app operational notifications | Complete |
+| **Phase 7 Part 3+** | External delivery, UAT, production deployment | Not started |

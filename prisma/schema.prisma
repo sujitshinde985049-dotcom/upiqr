@@ -49,6 +49,26 @@ enum PaymentEventProcessingStatus {
   FAILED
 }
 
+enum NotificationType {
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  PAYMENT_PENDING
+  QR_CREATED
+  QR_ACTIVATED
+  QR_DEACTIVATED
+  MERCHANT_ACTIVATED
+  MERCHANT_DEACTIVATED
+  CLIENT_ACTIVATED
+  CLIENT_DEACTIVATED
+}
+
+enum NotificationSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
 model User {
   id           String       @id
   name         String
@@ -65,6 +85,7 @@ model User {
   client   Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   merchant Merchant? @relation(fields: [merchantId], references: [id], onDelete: SetNull)
   auditLogs AuditLog[]
+  notificationReads NotificationRead[]
 
   @@index([clientId])
   @@index([merchantId])
@@ -256,6 +277,47 @@ model ClientSettings {
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
+}
+
+model Notification {
+  id            String               @id @default(cuid())
+  type          NotificationType
+  severity      NotificationSeverity
+  title         String
+  message       String
+  clientId      String?
+  merchantId    String?
+  transactionId String?
+  qrId          String?
+  providerMode  QRProviderMode?
+  sourceType    String
+  sourceId      String
+  linkPath      String?
+  createdAt     DateTime             @default(now())
+
+  reads NotificationRead[]
+
+  @@unique([sourceType, sourceId, type])
+  @@index([clientId])
+  @@index([merchantId])
+  @@index([transactionId])
+  @@index([qrId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+model NotificationRead {
+  id             String   @id @default(cuid())
+  notificationId String
+  userId         String
+  readAt         DateTime @default(now())
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, userId])
+  @@index([userId])
+  @@index([notificationId])
 }
 
 model AuditLog {

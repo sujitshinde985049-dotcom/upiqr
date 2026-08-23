@@ -8,6 +8,7 @@ import {
   Activity,
   Users,
   Settings,
+  Bell,
 } from "lucide-react";
 import type { UserRole } from "@prisma/client";
 
@@ -42,6 +43,13 @@ function canAccessNavItem(role: UserRole, href: string): boolean {
       return role === "SUPER_ADMIN" || role === "CLIENT_ADMIN";
     case "/settings":
       return role === "SUPER_ADMIN" || role === "CLIENT_ADMIN";
+    case "/notifications":
+      return (
+        role === "SUPER_ADMIN" ||
+        role === "CLIENT_ADMIN" ||
+        role === "CLIENT_OPERATOR" ||
+        role === "MERCHANT_USER"
+      );
     default:
       return true;
   }
@@ -97,5 +105,10 @@ export const mainNavItems: NavItem[] = [
     title: "Settings",
     href: "/settings",
     icon: Settings,
+  },
+  {
+    title: "Notifications",
+    href: "/notifications",
+    icon: Bell,
   },
 ];

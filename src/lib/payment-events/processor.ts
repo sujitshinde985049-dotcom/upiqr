@@ -11,6 +11,7 @@ import { createAuditLog } from "@/lib/audit/audit-log";
 import { toUiTransactionStatus } from "@/lib/mappers";
 import { generateEntityId } from "@/lib/utils/id-generator";
 import { PaymentEventProcessingError } from "./errors";
+import { createPaymentNotificationSafely } from "@/lib/services/notification-service";
 import { isAllowedStatusTransition } from "./state-machine";
 import {
   normalizedPaymentEventSchema,
@@ -194,7 +195,7 @@ export async function processNormalizedPaymentEvent(
       : event.completedAt ?? new Date();
 
   try {
-    return await prisma.$transaction(
+    const result: PaymentEventProcessingResult = await prisma.$transaction(
       async (tx) => {
         const existingEvent = await tx.paymentEvent.findUnique({
           where: {
@@ -413,6 +414,19 @@ export async function processNormalizedPaymentEvent(
       },
       { timeout: TRANSACTION_TIMEOUT_MS }
     );
+
+    if (
+      result.processingStatus === "PROCESSED" &&
+      result.paymentEventId &&
+      result.transactionId
+    ) {
+      await createPaymentNotificationSafely(
+        result.paymentEventId,
+        result.transactionId
+      );
+    }
+
+    return result;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

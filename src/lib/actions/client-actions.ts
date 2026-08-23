@@ -1,12 +1,13 @@
 "use server";
 
-import { ClientType, EntityStatus, Prisma } from "@prisma/client";
+import { ClientType, EntityStatus, NotificationType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import {
   requireAuthenticatedUser,
   requireRole,
 } from "@/lib/auth/authorization";
 import { createAuditLog } from "@/lib/audit/audit-log";
+import { createClientStatusNotification } from "@/lib/services/notification-service";
 import { generateNextClientCode } from "@/lib/utils/client-code";
 import { checkClientDuplicates } from "@/lib/services/client-service";
 import {
@@ -177,7 +178,7 @@ export async function updateClientStatusAction(
       auditAction = "CLIENT_DEACTIVATED";
     }
 
-    await prisma.client.update({
+    const updated = await prisma.client.update({
       where: { id: clientId },
       data: { status: newStatus },
     });
@@ -193,6 +194,17 @@ export async function updateClientStatusAction(
         previousStatus: existing.status,
         newStatus,
       },
+    });
+
+    await createClientStatusNotification({
+      type:
+        newStatus === EntityStatus.ACTIVE
+          ? NotificationType.CLIENT_ACTIVATED
+          : NotificationType.CLIENT_DEACTIVATED,
+      clientId,
+      clientName: existing.name,
+      clientCode: existing.clientCode,
+      sourceId: `${clientId}:${auditAction}:${updated.updatedAt.toISOString()}`,
     });
 
     return actionSuccess({

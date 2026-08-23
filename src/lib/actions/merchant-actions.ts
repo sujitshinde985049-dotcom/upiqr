@@ -1,6 +1,6 @@
 "use server";
 
-import { EntityStatus, Prisma } from "@prisma/client";
+import { EntityStatus, NotificationType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import {
   requireAuthenticatedUser,
@@ -13,6 +13,7 @@ import { createAuditLog } from "@/lib/audit/audit-log";
 import { generateNextMerchantCode } from "@/lib/utils/merchant-code";
 import { maskAccountReference } from "@/lib/utils/mask-account-reference";
 import { checkMerchantDuplicates } from "@/lib/services/merchant-service";
+import { createMerchantStatusNotification } from "@/lib/services/notification-service";
 import {
   createMerchantInputSchema,
   updateMerchantSchema,
@@ -271,7 +272,7 @@ export async function updateMerchantStatusAction(
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.merchant.update({
+      const updated = await tx.merchant.update({
         where: { id: merchantId },
         data: { status: newStatus },
       });
@@ -290,6 +291,20 @@ export async function updateMerchantStatusAction(
           },
         },
       });
+
+      return updated;
+    });
+
+    await createMerchantStatusNotification({
+      type:
+        newStatus === EntityStatus.ACTIVE
+          ? NotificationType.MERCHANT_ACTIVATED
+          : NotificationType.MERCHANT_DEACTIVATED,
+      merchantId,
+      clientId: existing.clientId,
+      businessName: existing.businessName,
+      merchantCode: existing.merchantCode,
+      sourceId: `${merchantId}:${auditAction}:${newStatus}`,
     });
 
     return actionSuccess({

@@ -29,6 +29,7 @@ import { SABPAISA_ENV_VARS } from "../src/lib/sabpaisa/constants";
 import { buildCsvContent, CSV_EXPORT_MAX_ROWS, sanitizeCsvCell } from "../src/lib/utils/csv-export";
 import { reportsQuerySchema } from "../src/lib/validations/reports";
 import type { SessionUser } from "../src/lib/auth/types";
+import { format } from "date-fns";
 
 process.env.SABPAISA_MODE = "mock";
 
@@ -354,11 +355,13 @@ async function runTests() {
     `total=${clientReports.summary.total}`
   );
 
+  const weekBounds = resolveReportsDateBounds({ ...baseQuery, dateWindow: "7days" });
   const customReports = await getReportsData(clientAAdmin, {
     ...baseQuery,
     dateWindow: "custom",
-    fromDate: resolveReportsDateBounds({ ...baseQuery, dateWindow: "7days" }).fromDate.slice(0, 10),
-    toDate: resolveReportsDateBounds({ ...baseQuery, dateWindow: "7days" }).toDate.slice(0, 10),
+    // Match UI date inputs: local calendar YYYY-MM-DD, not UTC slice of ISO strings.
+    fromDate: format(new Date(weekBounds.fromDate), "yyyy-MM-dd"),
+    toDate: format(new Date(weekBounds.toDate), "yyyy-MM-dd"),
   });
   record(
     "Valid custom date range works",

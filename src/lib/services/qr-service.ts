@@ -1,5 +1,6 @@
 import {
   EntityStatus,
+  NotificationType,
   PaymentRail,
   QRProviderMode,
   TransactionStatus,
@@ -19,6 +20,7 @@ import { loadSabPaisaIntegrationMode } from "@/lib/sabpaisa/mode";
 import { isSabPaisaError } from "@/lib/sabpaisa/errors";
 import type { SabPaisaQRProviderRecord } from "@/lib/sabpaisa/qr-types";
 import { generateEntityId } from "@/lib/utils/id-generator";
+import { createQrNotification } from "@/lib/services/notification-service";
 import { mapQRCode } from "@/lib/mappers";
 import type { QRCodeWithStats } from "@/types";
 import {
@@ -242,6 +244,17 @@ export async function createMerchantQR(
 
     return record;
   }, { timeout: 20000 });
+
+  await createQrNotification({
+    type: NotificationType.QR_CREATED,
+    qrId: created.id,
+    clientId: created.clientId,
+    merchantId: created.merchantId,
+    providerMode: created.providerMode,
+    qrName: created.qrName,
+    qrIdentifier: created.qrIdentifier,
+    sourceId: created.id,
+  });
 
   return {
     id: created.id,
@@ -550,8 +563,8 @@ export async function deactivateMerchantQR(user: SessionUser, qrId: string) {
     return { id: qr.id, status: "inactive" as const, alreadyInactive: true };
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.qRCode.update({
+  const updated = await prisma.$transaction(async (tx) => {
+    const row = await tx.qRCode.update({
       where: { id: qr.id },
       data: { status: EntityStatus.INACTIVE },
     });
@@ -570,7 +583,20 @@ export async function deactivateMerchantQR(user: SessionUser, qrId: string) {
         } as Prisma.InputJsonValue,
       },
     });
+
+    return row;
   }, { timeout: 20000 });
+
+  await createQrNotification({
+    type: NotificationType.QR_DEACTIVATED,
+    qrId: qr.id,
+    clientId: qr.clientId,
+    merchantId: qr.merchantId,
+    providerMode: qr.providerMode,
+    qrName: qr.qrName,
+    qrIdentifier: qr.qrIdentifier,
+    sourceId: `${qr.id}:QR_DEACTIVATED:${updated.updatedAt.toISOString()}`,
+  });
 
   return { id: qr.id, status: "inactive" as const, alreadyInactive: false };
 }
@@ -590,8 +616,8 @@ export async function reactivateMerchantQR(user: SessionUser, qrId: string) {
     return { id: qr.id, status: "active" as const, alreadyActive: true };
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.qRCode.update({
+  const updated = await prisma.$transaction(async (tx) => {
+    const row = await tx.qRCode.update({
       where: { id: qr.id },
       data: { status: EntityStatus.ACTIVE },
     });
@@ -610,7 +636,20 @@ export async function reactivateMerchantQR(user: SessionUser, qrId: string) {
         } as Prisma.InputJsonValue,
       },
     });
+
+    return row;
   }, { timeout: 20000 });
+
+  await createQrNotification({
+    type: NotificationType.QR_ACTIVATED,
+    qrId: qr.id,
+    clientId: qr.clientId,
+    merchantId: qr.merchantId,
+    providerMode: qr.providerMode,
+    qrName: qr.qrName,
+    qrIdentifier: qr.qrIdentifier,
+    sourceId: `${qr.id}:QR_ACTIVATED:${updated.updatedAt.toISOString()}`,
+  });
 
   return { id: qr.id, status: "active" as const, alreadyActive: false };
 }

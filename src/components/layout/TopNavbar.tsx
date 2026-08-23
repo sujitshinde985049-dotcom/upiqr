@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Bell, LogOut, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,8 +15,20 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Menu } from "lucide-react";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import type { NotificationView } from "@/lib/services/notification-service";
 
-export function TopNavbar() {
+interface TopNavbarProps {
+  unreadNotificationCount?: number;
+  recentNotifications?: NotificationView[];
+  showNotifications?: boolean;
+}
+
+export function TopNavbar({
+  unreadNotificationCount = 0,
+  recentNotifications = [],
+  showNotifications = false,
+}: TopNavbarProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const user = session?.user;
@@ -42,11 +54,12 @@ export function TopNavbar() {
 
       <div className="flex-1" />
 
-      <Button variant="ghost" size="icon" className="relative">
-        <Bell className="h-5 w-5" />
-        <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" />
-        <span className="sr-only">Notifications</span>
-      </Button>
+      {showNotifications && (
+        <NotificationBell
+          unreadCount={unreadNotificationCount}
+          recentNotifications={recentNotifications}
+        />
+      )}
 
       <DropdownMenu>
         <DropdownMenuTrigger
