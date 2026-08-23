@@ -29,12 +29,15 @@ Mock fixture flags (`ALLOW_MOCK_*`) must remain **disabled** in production.
 1. Check out the release commit on the deployment host/CI.
 2. Install dependencies: `npm ci` (or `npm install` in controlled environments).
 3. Validate environment variables (missing/invalid config must fail closed).
-4. Generate Prisma client: `npx prisma generate`
-5. Apply migrations: `npx prisma migrate deploy`
-6. Build application: `npm run build`
-7. Start application: `npm run start`
-8. Verify liveness: `GET /api/health` → `{ "status": "ok" }`
-9. Verify readiness: `GET /api/ready` → `{ "status": "ready" }` when database is reachable
+4. Run migration preflight: `npm run db:migrate:preflight`
+5. Generate Prisma client: `npx prisma generate`
+6. Apply migrations: `npm run db:migrate:deploy` (or `npx prisma migrate deploy`)
+7. Verify migration status: `npm run db:migrate:status`
+8. Run post-deploy integrity check: `npm run db:integrity:verify`
+9. Build application: `npm run build`
+10. Start application: `npm run start`
+11. Verify liveness: `GET /api/health` → `{ "status": "ok" }`
+12. Verify readiness: `GET /api/ready` → `{ "status": "ready" }` when database is reachable
 
 `npm run build` must **not** mutate the production database. Schema generation is not a migration.
 
@@ -77,3 +80,14 @@ See `docs/SABPAISA_LIVE_READINESS.md`. LIVE activation remains blocked pending:
 - Live credentials/onboarding
 
 Setting `SABPAISA_MODE=live` alone does **not** make the system live-ready.
+
+## Database deployment and recovery
+
+See `docs/DATABASE_RECOVERY.md` for:
+
+- Migration preflight and post-deploy integrity verification
+- Backup and restore procedures (restore drill: **DOCUMENTED ONLY**)
+- Migration failure handling and immutability rules
+- Seed/verification safety (`db:seed` must **not** run in production)
+
+Verification suites mutate Neon test data. Do **not** run them against an actual production database. Use `DB_PRODUCTION_GUARD=true` or `NODE_ENV=production` (without `ALLOW_DB_TEST_MUTATIONS=true`) to block mutating scripts when explicitly configured.

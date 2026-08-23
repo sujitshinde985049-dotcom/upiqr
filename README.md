@@ -650,6 +650,32 @@ Environment → Typed Server Config → Startup Validation → Security Policy �
 npm run test:phase8-part1   # Production config + deployment security
 ```
 
+## Phase 8 Part 2 — Database Deployment, Backup & Recovery Hardening
+
+Hardens Prisma/Neon database deployment and recovery operations without schema redesign or destructive changes to the current database.
+
+```text
+Prisma schema/migrations → Migration preflight → migrate deploy → Post-deploy integrity → Backup/recovery runbook
+```
+
+### Covered in Phase 8 Part 2
+
+- Migration inventory and destructive-SQL review gate (`src/lib/db/migration-inventory.ts`)
+- Read-only migration preflight (`npm run db:migrate:preflight`)
+- Read-only post-deploy integrity verification (`npm run db:integrity:verify`)
+- Tenant/relationship orphan detection (read-only; anomalies reported, not auto-deleted)
+- `docs/DATABASE_RECOVERY.md` — backup, restore policy, migration failure handling
+- Test database guard for mutating verification scripts (`assertSafeTestDatabase`)
+- Restore drill status: **DOCUMENTED ONLY** (no restore performed against current Neon)
+
+**No new business schema migration.** Production uses `prisma migrate deploy` only. `npm run build` does not migrate/seed/reset.
+
+```bash
+npm run test:phase8-part2   # Database deployment + recovery hardening
+npm run db:migrate:preflight
+npm run db:integrity:verify
+```
+
 ## Installation
 
 ```bash
@@ -763,6 +789,9 @@ npm run test:phase7-part2         # Phase 7 Part 2 operational notifications + s
 npm run test:phase7-part3         # Phase 7 Part 3 secure user account management
 npm run test:phase7-final         # Phase 7 end-to-end integration + security
 npm run test:phase8-part1         # Phase 8 Part 1 production config + deployment security
+npm run test:phase8-part2         # Phase 8 Part 2 database deployment + recovery
+npm run db:migrate:preflight      # Read-only migration preflight
+npm run db:integrity:verify       # Read-only post-deploy integrity check
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -836,8 +865,12 @@ scripts/
   verify-phase7-part3.ts
   verify-phase7-final.ts
   verify-phase8-part1.ts
+  verify-phase8-part2.ts
+  db-migrate-preflight.ts
+  db-integrity-check.ts
 docs/
   DEPLOYMENT_READINESS.md
+  DATABASE_RECOVERY.md
   SABPAISA_LIVE_READINESS.md
   PHASE5_STATUS.md
 
@@ -867,4 +900,5 @@ docs/
 | **Phase 7 Part 3** | Secure user account management | Complete |
 | **Phase 7 Part 4** | Final integration & security hardening | Complete |
 | **Phase 8 Part 1** | Production configuration & deployment security | Complete |
-| **Phase 8 Part 2+** | Observability, UAT, production rollout | Not started |
+| **Phase 8 Part 2** | Database deployment, backup & recovery hardening | Complete |
+| **Phase 8 Part 3+** | Observability, UAT, production rollout | Not started |

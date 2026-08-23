@@ -10,6 +10,10 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status",
+    "db:migrate:preflight": "tsx scripts/db-migrate-preflight.ts",
+    "db:integrity:verify": "tsx scripts/db-integrity-check.ts",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
@@ -38,7 +42,8 @@
     "test:phase7-part2": "tsx scripts/verify-phase7-part2.ts",
     "test:phase7-part3": "tsx scripts/verify-phase7-part3.ts",
     "test:phase7-final": "tsx scripts/verify-phase7-final.ts",
-    "test:phase8-part1": "tsx scripts/verify-phase8-part1.ts"
+    "test:phase8-part1": "tsx scripts/verify-phase8-part1.ts",
+    "test:phase8-part2": "tsx scripts/verify-phase8-part2.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
