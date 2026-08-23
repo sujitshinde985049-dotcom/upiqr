@@ -583,6 +583,50 @@ Trusted Server Event → Notification Service → Neon Notification → Per-User
 npm run test:phase7-part2   # Operational notifications + RBAC + idempotency
 ```
 
+## Phase 7 Part 3 — Secure User Account Management
+
+Closes application account-management gaps with tenant-safe profile editing and password operations. **Passwords are hashed server-side only.** Plaintext passwords are never stored, logged, audited, or returned to the browser.
+
+```text
+User Management UI / Profile → Server Actions → RBAC → Zod Validation → User Service → Neon + Audit Log
+```
+
+### Covered in Phase 7 Part 3
+
+- Self profile editing (`/profile`) — name only; email remains read-only as login identifier
+- Admin user profile editing (`/users/[id]/edit`) — name + email for authorized managed users
+- Self-service password change with current-password verification
+- Administrative temporary password reset for authorized managed users
+- Explicit allowlisted updates — role, `clientId`, `merchantId`, and `status` are not mass-assignable through profile edit
+- Safe audit actions: `USER_PROFILE_UPDATED`, `USER_PASSWORD_CHANGED`, `USER_PASSWORD_RESET`
+
+### Intentionally NOT implemented
+
+- Public forgot-password / email reset flow (no email delivery infrastructure)
+- Session revocation after password change (JWT sessions remain valid until expiry)
+- Self email change (login identifier remains read-only without verification infrastructure)
+- Role reassignment through ordinary profile edit
+
+```bash
+npm run test:phase7-part3   # User profile + password security + RBAC
+```
+
+## Phase 7 Part 4 — Final Integration & Security
+
+Phase 7 closes with cross-feature RBAC, tenant isolation, secret/privacy review, provider fail-closed gates, and regression verification across Settings, Notifications, and User Management.
+
+```bash
+npm run test:phase7-final   # Phase 7 end-to-end integration + security
+```
+
+## Phase 7 COMPLETE
+
+Phase 7 delivers persistent tenant-safe settings, in-app operational notifications, and secure user account management with server-side RBAC throughout. **Phase 7 features do not determine or mutate payment truth.** MOCK activity remains clearly TEST activity. Live SabPaisa onboarding blockers remain external:
+
+- Official SabPaisa crypto interoperability details/helper
+- Official webhook payload/signature/replay specification
+- Live credentials/onboarding
+
 ## Installation
 
 ```bash
@@ -693,6 +737,8 @@ npm run test:phase6-part3         # Phase 6 Part 3 operational monitoring + secu
 npm run test:phase6-final         # Phase 6 end-to-end integration + security
 npm run test:phase7-part1         # Phase 7 Part 1 persistent settings + security
 npm run test:phase7-part2         # Phase 7 Part 2 operational notifications + security
+npm run test:phase7-part3         # Phase 7 Part 3 secure user account management
+npm run test:phase7-final         # Phase 7 end-to-end integration + security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -763,6 +809,8 @@ scripts/
   verify-phase6-final.ts
   verify-phase7-part1.ts
   verify-phase7-part2.ts
+  verify-phase7-part3.ts
+  verify-phase7-final.ts
 docs/
   SABPAISA_LIVE_READINESS.md
   PHASE5_STATUS.md
@@ -790,4 +838,6 @@ docs/
 | **Phase 6** | Dashboard, reports, and operational monitoring | Complete |
 | **Phase 7 Part 1** | Persistent tenant-safe settings | Complete |
 | **Phase 7 Part 2** | In-app operational notifications | Complete |
-| **Phase 7 Part 3+** | External delivery, UAT, production deployment | Not started |
+| **Phase 7 Part 3** | Secure user account management | Complete |
+| **Phase 7 Part 4** | Final integration & security hardening | Complete |
+| **Phase 8+** | External delivery, UAT, production deployment | Not started |

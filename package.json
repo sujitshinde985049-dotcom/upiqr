@@ -34,7 +34,9 @@
     "test:phase6-part3": "tsx scripts/verify-phase6-part3.ts",
     "test:phase6-final": "tsx scripts/verify-phase6-final.ts",
     "test:phase7-part1": "tsx scripts/verify-phase7-part1.ts",
-    "test:phase7-part2": "tsx scripts/verify-phase7-part2.ts"
+    "test:phase7-part2": "tsx scripts/verify-phase7-part2.ts",
+    "test:phase7-part3": "tsx scripts/verify-phase7-part3.ts",
+    "test:phase7-final": "tsx scripts/verify-phase7-final.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

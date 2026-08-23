@@ -16,11 +16,20 @@ import { generateNextUserId } from "@/lib/utils/user-id";
 import {
   checkEmailDuplicate,
   canActorManageTargetUser,
+  UserServiceError,
+  updateOwnProfile,
+  updateUserProfileByAdmin,
+  changeOwnPassword,
+  adminResetUserPassword,
 } from "@/lib/services/user-service";
 import {
   createClientUserSchema,
   createMerchantUserSchema,
   updateUserStatusInputSchema,
+  updateOwnProfileSchema,
+  updateUserProfileSchema,
+  changeOwnPasswordSchema,
+  adminResetPasswordSchema,
 } from "@/lib/validations/users";
 import { actionError, actionSuccess, type ActionResult } from "./types";
 
@@ -282,4 +291,92 @@ export async function updateUserStatusActionLegacy(
   status: "active" | "inactive"
 ): Promise<ActionResult> {
   return updateUserStatusAction({ userId, status });
+}
+
+function mapUserServiceError(error: unknown): ActionResult<never> {
+  if (error instanceof UserServiceError) {
+    return actionError(error.message);
+  }
+  return actionError("Unable to complete request. Please try again.");
+}
+
+export async function updateOwnProfileAction(
+  input: unknown
+): Promise<ActionResult<{ name: string }>> {
+  try {
+    const actor = await requireAuthenticatedUser();
+    const parsed = updateOwnProfileSchema.safeParse(input);
+    if (!parsed.success) {
+      return actionError(parsed.error.issues[0]?.message ?? "Invalid input");
+    }
+
+    const updated = await updateOwnProfile(actor, parsed.data);
+    return actionSuccess({ name: updated.name });
+  } catch (error) {
+    console.error("updateOwnProfileAction failed");
+    return mapUserServiceError(error);
+  }
+}
+
+export async function updateUserProfileAction(
+  input: unknown
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const actor = await requireAuthenticatedUser();
+    const parsed = updateUserProfileSchema.safeParse(input);
+    if (!parsed.success) {
+      return actionError(parsed.error.issues[0]?.message ?? "Invalid input");
+    }
+
+    const updated = await updateUserProfileByAdmin(actor, parsed.data);
+    return actionSuccess({ id: updated.id });
+  } catch (error) {
+    if (isPrismaUniqueViolation(error)) {
+      return actionError("A user with this email already exists");
+    }
+    console.error("updateUserProfileAction failed");
+    return mapUserServiceError(error);
+  }
+}
+
+export async function changeOwnPasswordAction(
+  input: unknown
+): Promise<ActionResult> {
+  try {
+    const actor = await requireAuthenticatedUser();
+    const parsed = changeOwnPasswordSchema.safeParse(input);
+    if (!parsed.success) {
+      return actionError(parsed.error.issues[0]?.message ?? "Invalid input");
+    }
+
+    await changeOwnPassword(actor, {
+      currentPassword: parsed.data.currentPassword,
+      newPassword: parsed.data.newPassword,
+    });
+    return actionSuccess(undefined);
+  } catch (error) {
+    console.error("changeOwnPasswordAction failed");
+    return mapUserServiceError(error);
+  }
+}
+
+export async function adminResetUserPasswordAction(
+  input: unknown
+): Promise<ActionResult> {
+  try {
+    const actor = await requireAuthenticatedUser();
+    const parsed = adminResetPasswordSchema.safeParse(input);
+    if (!parsed.success) {
+      return actionError(parsed.error.issues[0]?.message ?? "Invalid input");
+    }
+
+    await adminResetUserPassword(actor, {
+      userId: parsed.data.userId,
+      newPassword: parsed.data.newPassword,
+    });
+    return actionSuccess(undefined);
+  } catch (error) {
+    console.error("adminResetUserPasswordAction failed");
+    return mapUserServiceError(error);
+  }
 }

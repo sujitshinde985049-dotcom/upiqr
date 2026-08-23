@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Plus, Power } from "lucide-react";
+import { Plus, Power, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { DataTable, type Column } from "@/components/shared/DataTable";
@@ -138,17 +138,24 @@ export function UsersPageContent({
       cell: (u) => (
         <div className="flex items-center gap-1">
           {u.role !== "super_admin" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => {
-                setSelectedUser(u);
-                setConfirmOpen(true);
-              }}
-            >
-              <Power className="h-4 w-4" />
-            </Button>
+            <>
+              <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                <Link href={`/users/${u.id}/edit`}>
+                  <Pencil className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  setSelectedUser(u);
+                  setConfirmOpen(true);
+                }}
+              >
+                <Power className="h-4 w-4" />
+              </Button>
+            </>
           )}
         </div>
       ),

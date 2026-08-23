@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -86,7 +87,7 @@ export function TopNavbar({
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/profile" className="flex w-full items-center" />}>
             <User className="mr-2 h-4 w-4" />
             Profile
           </DropdownMenuItem>
