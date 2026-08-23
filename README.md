@@ -627,6 +627,29 @@ Phase 7 delivers persistent tenant-safe settings, in-app operational notificatio
 - Official webhook payload/signature/replay specification
 - Live credentials/onboarding
 
+## Phase 8 Part 1 — Production Configuration & Deployment Security
+
+Prepares the application for secure production deployment without enabling SabPaisa LIVE or performing an actual production deploy.
+
+```text
+Environment → Typed Server Config → Startup Validation → Security Policy → Health/Readiness → Safe Build → Deployment Docs
+```
+
+### Covered in Phase 8 Part 1
+
+- Typed server-only configuration (`src/lib/config/env.ts`) with fail-closed validation
+- `GET /api/health` (liveness) and `GET /api/ready` (DB readiness, read-only)
+- Security headers baseline in `next.config.ts` (frame/MIME/referrer/permissions)
+- `.env.example` deployment template with placeholders only
+- `docs/DEPLOYMENT_READINESS.md` safe migration/deploy runbook
+- `npm run db:deploy` for production migrations (`prisma migrate deploy`)
+
+**Production deployment readiness does not mean SabPaisa LIVE readiness.** `NODE_ENV=production` does not imply `SABPAISA_MODE=live`.
+
+```bash
+npm run test:phase8-part1   # Production config + deployment security
+```
+
 ## Installation
 
 ```bash
@@ -739,6 +762,7 @@ npm run test:phase7-part1         # Phase 7 Part 1 persistent settings + securit
 npm run test:phase7-part2         # Phase 7 Part 2 operational notifications + security
 npm run test:phase7-part3         # Phase 7 Part 3 secure user account management
 npm run test:phase7-final         # Phase 7 end-to-end integration + security
+npm run test:phase8-part1         # Phase 8 Part 1 production config + deployment security
 npx tsc --noEmit                  # TypeScript
 npm run lint                      # ESLint
 npm run build                     # Production build
@@ -811,7 +835,9 @@ scripts/
   verify-phase7-part2.ts
   verify-phase7-part3.ts
   verify-phase7-final.ts
+  verify-phase8-part1.ts
 docs/
+  DEPLOYMENT_READINESS.md
   SABPAISA_LIVE_READINESS.md
   PHASE5_STATUS.md
 
@@ -840,4 +866,5 @@ docs/
 | **Phase 7 Part 2** | In-app operational notifications | Complete |
 | **Phase 7 Part 3** | Secure user account management | Complete |
 | **Phase 7 Part 4** | Final integration & security hardening | Complete |
-| **Phase 8+** | External delivery, UAT, production deployment | Not started |
+| **Phase 8 Part 1** | Production configuration & deployment security | Complete |
+| **Phase 8 Part 2+** | Observability, UAT, production rollout | Not started |

@@ -3,6 +3,8 @@
 MahaCred QR Phase 4 is complete in **TEST/MOCK mode only**.  
 Live SabPaisa production integration is **NOT enabled**.
 
+Phase 8 Part 1 adds deployment configuration/readiness endpoints but does **not** change LIVE activation policy.
+
 Use this checklist before setting `SABPAISA_MODE=live` in any environment.
 
 ---
