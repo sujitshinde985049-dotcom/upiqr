@@ -17,6 +17,7 @@
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
+    "test:login-redirect": "tsx scripts/verify-login-redirect.ts",
     "test:tenant-isolation": "tsx scripts/verify-tenant-isolation.ts",
     "test:merchant-security": "tsx scripts/verify-merchant-security.ts",
     "test:merchant-validation": "tsx scripts/verify-merchant-validation.ts",

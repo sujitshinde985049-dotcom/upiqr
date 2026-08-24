@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { resolveSafePostLoginRedirect } from "@/lib/auth/safe-redirect";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -33,8 +34,10 @@ export default function LoginForm() {
 
     if (result?.ok) {
       toast.success("Welcome back!");
-      const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
-      router.push(callbackUrl);
+      const destination = resolveSafePostLoginRedirect(
+        searchParams.get("callbackUrl")
+      );
+      router.push(destination);
       router.refresh();
     } else {
       toast.error("Invalid credentials", {
@@ -69,7 +72,7 @@ export default function LoginForm() {
           </p>
         </div>
         <p className="text-xs text-primary-foreground/50">
-          Phase 2 — Database-backed authentication with tenant isolation.
+          Secure access for authorized financial institution users.
         </p>
       </div>
 
@@ -100,7 +103,7 @@ export default function LoginForm() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@mahacred.in"
+                  placeholder="you@institution.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -159,9 +162,6 @@ export default function LoginForm() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Signing in..." : "Login"}
               </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                Dev: admin@mahacred.in — see README for seed credentials
-              </p>
             </form>
           </CardContent>
         </Card>

@@ -2,6 +2,10 @@ import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { authConfig } from "@/auth.config";
+import {
+  DEFAULT_POST_LOGIN_PATH,
+  resolveSafePostLoginRedirect,
+} from "@/lib/auth/safe-redirect";
 
 const { auth } = NextAuth(authConfig);
 
@@ -25,7 +29,11 @@ export async function middleware(request: NextRequest) {
   const session = await auth();
   if (!session?.user) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
+    const intendedPath = `${pathname}${request.nextUrl.search}`;
+    const safeCallback = resolveSafePostLoginRedirect(intendedPath);
+    if (safeCallback !== DEFAULT_POST_LOGIN_PATH) {
+      loginUrl.searchParams.set("callbackUrl", safeCallback);
+    }
     return NextResponse.redirect(loginUrl);
   }
 
