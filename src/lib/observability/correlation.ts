@@ -1,9 +1,13 @@
-import { randomBytes } from "node:crypto";
-
 const MAX_CORRELATION_ID_LENGTH = 64;
 
+/**
+ * Generate a bounded correlation ID using runtime Web Crypto (Edge + Node safe).
+ * Format: 16 lowercase hex characters (8 random bytes), matching prior contract.
+ */
 export function generateCorrelationId(): string {
-  return randomBytes(8).toString("hex");
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 /**

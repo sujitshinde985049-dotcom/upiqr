@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/prisma";
 import { verifyPassword } from "@/lib/auth/password";
 import { createAuditLog } from "@/lib/audit/audit-log";
 import type { SessionUser } from "@/lib/auth/types";
+import { authConfig } from "@/auth.config";
 
 declare module "next-auth" {
   interface Session {
@@ -31,6 +32,7 @@ declare module "@auth/core/jwt" {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: "credentials",
@@ -93,37 +95,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-    maxAge: 60 * 60 * 8,
-  },
-  pages: {
-    signIn: "/login",
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.clientId = user.clientId;
-        token.merchantId = user.merchantId;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      return {
-        ...session,
-        user: {
-          id: token.id as string,
-          name: session.user?.name ?? "",
-          email: session.user?.email ?? "",
-          role: token.role as SessionUser["role"],
-          clientId: (token.clientId as string | null | undefined) ?? null,
-          merchantId: (token.merchantId as string | null | undefined) ?? null,
-        },
-      };
-    },
-  },
-  trustHost: true,
   secret: process.env.AUTH_SECRET,
 });

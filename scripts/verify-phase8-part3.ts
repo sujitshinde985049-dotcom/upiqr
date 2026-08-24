@@ -287,6 +287,36 @@ async function runTests() {
     "mock"
   );
 
+  const middlewareSource = readFileSync(join(process.cwd(), "src/middleware.ts"), "utf8");
+  const correlationSource = readFileSync(
+    join(process.cwd(), "src/lib/observability/correlation.ts"),
+    "utf8"
+  );
+  const authConfigSource = readFileSync(join(process.cwd(), "src/auth.config.ts"), "utf8");
+  record(
+    "Middleware uses edge-safe auth config",
+    middlewareSource.includes('from "@/auth.config"'),
+    "auth.config"
+  );
+  record(
+    "Middleware does not import server auth module",
+    !middlewareSource.includes('from "@/auth"'),
+    "isolated"
+  );
+  record(
+    "Correlation ID uses Web Crypto not node:crypto",
+    correlationSource.includes("crypto.getRandomValues") &&
+      !correlationSource.includes("node:crypto"),
+    "edge-safe"
+  );
+  record(
+    "Auth config has no Prisma/audit imports",
+    !authConfigSource.includes("@/lib/db/prisma") &&
+      !authConfigSource.includes("audit-log") &&
+      !authConfigSource.includes("@/lib/observability"),
+    "clean"
+  );
+
   const passed = results.filter((r) => r.passed).length;
   const failed = results.length - passed;
   console.log(`\nPhase 8 Part 3: ${passed}/${results.length} PASS${failed ? `, ${failed} FAIL` : ""}`);

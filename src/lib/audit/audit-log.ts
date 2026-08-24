@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
-import { operationalLogger } from "@/lib/observability";
+import { operationalLogger } from "@/lib/observability/logger";
 import type { Prisma } from "@prisma/client";
 
 export interface AuditLogInput {
