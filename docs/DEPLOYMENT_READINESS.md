@@ -91,3 +91,8 @@ See `docs/DATABASE_RECOVERY.md` for:
 - Seed/verification safety (`db:seed` must **not** run in production)
 
 Verification suites mutate Neon test data. Do **not** run them against an actual production database. Use `DB_PRODUCTION_GUARD=true` or `NODE_ENV=production` (without `ALLOW_DB_TEST_MUTATIONS=true`) to block mutating scripts when explicitly configured.
+
+See also:
+
+- `docs/OPERATIONS_RUNBOOK.md` — health/readiness, transient DB errors, secret incidents
+- `docs/PRODUCTION_RELEASE_CHECKLIST.md` — controlled deployment GO/NO-GO

@@ -676,6 +676,50 @@ npm run db:migrate:preflight
 npm run db:integrity:verify
 ```
 
+## Phase 8 Part 3 — Operational Observability
+
+Establishes safe server-side operational observability without third-party APM or external alerting.
+
+```text
+application event → structured logger → sanitization/redaction → correlation context → operational logs → safe error handling
+```
+
+### Covered in Phase 8 Part 3
+
+- Server-only structured logger (`src/lib/observability/`) with `info`/`warn`/`error`/`debug`
+- Secret and privacy redaction (passwords, tokens, DB URL, SabPaisa secrets, VPA, account references)
+- Operational error categorization and generic public error messages
+- Correlation/request IDs (`x-request-id`) for API operational logs
+- Safe readiness failure logging; payment event outcome logging (no raw payloads)
+- `docs/OPERATIONS_RUNBOOK.md` — health, readiness, DB transients, secret incidents
+- **External alert delivery = NOT IMPLEMENTED**
+
+```bash
+npm run test:phase8-part3   # Operational observability verification
+```
+
+## Phase 8 Part 4 — Production Readiness & Release Sign-Off
+
+Final application-side readiness audit across security, RBAC, financial truth, database deployment, observability, and release procedure.
+
+### Covered in Phase 8 Part 4
+
+- `docs/PRODUCTION_RELEASE_CHECKLIST.md` — controlled deployment GO/NO-GO
+- `scripts/verify-phase8-final.ts` — end-to-end Phase 8 readiness verification
+- Distinct status categories:
+  - **Application deployment readiness** → READY FOR CONTROLLED DEPLOYMENT (when all gates pass)
+  - **SabPaisa LIVE readiness** → **BLOCKED** (crypto/webhook/onboarding)
+
+**Application-side controlled deployment readiness ≠ SabPaisa LIVE readiness.**
+
+```bash
+npm run test:phase8-final   # Phase 8 production readiness sign-off
+```
+
+## Phase 8 — COMPLETE
+
+Phase 8 delivers production configuration, database deployment/recovery hardening, operational observability, and release sign-off documentation — all while preserving MOCK-only SabPaisa operation and fail-closed LIVE gates.
+
 ## Installation
 
 ```bash
@@ -790,6 +834,8 @@ npm run test:phase7-part3         # Phase 7 Part 3 secure user account managemen
 npm run test:phase7-final         # Phase 7 end-to-end integration + security
 npm run test:phase8-part1         # Phase 8 Part 1 production config + deployment security
 npm run test:phase8-part2         # Phase 8 Part 2 database deployment + recovery
+npm run test:phase8-part3         # Phase 8 Part 3 operational observability
+npm run test:phase8-final         # Phase 8 production readiness sign-off
 npm run db:migrate:preflight      # Read-only migration preflight
 npm run db:integrity:verify       # Read-only post-deploy integrity check
 npx tsc --noEmit                  # TypeScript
@@ -866,11 +912,20 @@ scripts/
   verify-phase7-final.ts
   verify-phase8-part1.ts
   verify-phase8-part2.ts
+  verify-phase8-part3.ts
+  verify-phase8-final.ts
   db-migrate-preflight.ts
   db-integrity-check.ts
+src/lib/observability/
+  logger.ts
+  redaction.ts
+  errors.ts
+  correlation.ts
 docs/
   DEPLOYMENT_READINESS.md
   DATABASE_RECOVERY.md
+  OPERATIONS_RUNBOOK.md
+  PRODUCTION_RELEASE_CHECKLIST.md
   SABPAISA_LIVE_READINESS.md
   PHASE5_STATUS.md
 
@@ -901,4 +956,6 @@ docs/
 | **Phase 7 Part 4** | Final integration & security hardening | Complete |
 | **Phase 8 Part 1** | Production configuration & deployment security | Complete |
 | **Phase 8 Part 2** | Database deployment, backup & recovery hardening | Complete |
-| **Phase 8 Part 3+** | Observability, UAT, production rollout | Not started |
+| **Phase 8 Part 3** | Operational observability & failure handling | Complete |
+| **Phase 8 Part 4** | Production readiness & release sign-off | Complete |
+| **Phase 8** | Production hardening (application-side) | **Complete** |

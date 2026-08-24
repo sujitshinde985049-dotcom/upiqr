@@ -8,6 +8,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { createAuditLog } from "@/lib/audit/audit-log";
+import { operationalLogger } from "@/lib/observability";
 import { toUiTransactionStatus } from "@/lib/mappers";
 import { generateEntityId } from "@/lib/utils/id-generator";
 import { PaymentEventProcessingError } from "./errors";
@@ -425,6 +426,15 @@ export async function processNormalizedPaymentEvent(
         result.transactionId
       );
     }
+
+    operationalLogger.logPaymentEventOutcome({
+      provider: event.provider,
+      providerMode: event.providerMode,
+      providerEventId: event.providerEventId,
+      providerTransactionId: event.providerTransactionId,
+      processingStatus: result.processingStatus,
+      failureReasonCode: result.failureReasonCode,
+    });
 
     return result;
   } catch (error) {

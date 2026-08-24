@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { operationalLogger } from "@/lib/observability";
 import type { Prisma } from "@prisma/client";
 
 export interface AuditLogInput {
@@ -27,6 +28,12 @@ export async function createAuditLog(input: AuditLogInput): Promise<void> {
       },
     });
   } catch (error) {
-    console.error("Failed to write audit log:", error);
+    operationalLogger.logOperationalFailure("audit_log_write_failed", error, {
+      entityType: input.entityType,
+      entityId: input.entityId ?? undefined,
+      details: {
+        action: input.action,
+      },
+    });
   }
 }

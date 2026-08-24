@@ -5,6 +5,8 @@ Live SabPaisa production integration is **NOT enabled**.
 
 Phase 8 Part 1 adds deployment configuration/readiness endpoints but does **not** change LIVE activation policy.
 
+Phase 8 Part 4 confirms application-side controlled deployment readiness is separate from SabPaisa LIVE readiness (still **BLOCKED**).
+
 Use this checklist before setting `SABPAISA_MODE=live` in any environment.
 
 ---
